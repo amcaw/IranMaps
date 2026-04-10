@@ -86,12 +86,11 @@
 	.map-frame {
 		position: relative;
 		width: 100%;
-		aspect-ratio: 16 / 10;
+		height: 800px;
 		overflow: hidden;
 	}
 
 	:global(body.standalone) .map-frame {
-		aspect-ratio: auto;
 		height: 100dvh;
 	}
 
