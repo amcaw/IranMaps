@@ -1,0 +1,47 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'data/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: Build strikes.json
+        working-directory: app
+        run: node scripts/preprocess.js
+
+      - name: Build
+        working-directory: app
+        env:
+          BASE_PATH: ${{ github.event.repository.name }}
+        run: npm run build
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./app/build

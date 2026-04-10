@@ -1,0 +1,24 @@
+:root {
+	--bg: #0a0a0a;
+	--panel: #141414;
+	--border: #2a2a2a;
+	--text: #e0e0e0;
+	--text-dim: #888;
+	--accent: #4a9eff;
+}
+
+*, *::before, *::after {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+html, body {
+	height: 100%;
+	width: 100%;
+	overflow: hidden;
+	font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}

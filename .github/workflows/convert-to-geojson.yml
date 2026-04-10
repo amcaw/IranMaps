@@ -1,0 +1,71 @@
+name: Convert Shapefiles to GeoJSON
+
+on:
+  push:
+    paths:
+      - 'data/zips/*.zip'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: geojson-conversion
+  cancel-in-progress: false
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install GDAL
+        run: sudo apt-get update && sudo apt-get install -y gdal-bin
+
+      - name: Convert shapefiles to GeoJSON
+        run: |
+          mkdir -p data/geojson
+
+          for zipfile in data/zips/*.zip; do
+            [ -f "$zipfile" ] || continue
+
+            basename=$(basename "$zipfile" .zip)
+            geojson_path="data/geojson/${basename}.geojson"
+
+            tmpdir=$(mktemp -d)
+            unzip -o "$zipfile" -d "$tmpdir"
+            shpfile=$(find "$tmpdir" -name "*.shp" | head -1)
+
+            if [ -n "$shpfile" ]; then
+              ogr2ogr -f GeoJSON "$geojson_path" "$shpfile"
+              echo "Converted: $geojson_path"
+            fi
+
+            rm -rf "$tmpdir"
+          done
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build strikes.json
+        working-directory: app
+        run: |
+          npm ci
+          node scripts/preprocess.js
+
+      - name: Commit all changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+          git add data/geojson/*.geojson app/static/data/strikes.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update GeoJSON and strikes.json"
+            git push
+          fi
