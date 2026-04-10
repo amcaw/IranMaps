@@ -8,6 +8,12 @@
 
 	initPym();
 
+	onMount(() => {
+		if (window.self === window.top) {
+			document.body.classList.add('standalone');
+		}
+	});
+
 	let data: StrikeData | null = $state(null);
 	let selectedIndex = $state(0);
 	let playing = $state(false);
@@ -74,7 +80,10 @@
 	.page-root {
 		position: relative;
 		width: 100%;
-		height: 100vh;
+	}
+
+	:global(body.standalone) .page-root {
+		height: 100dvh;
 		overflow: hidden;
 	}
 
