@@ -55,36 +55,43 @@
 </script>
 
 <div class="page-root">
-	{#if data}
-		<Map {data} {selectedDate} {visibleLayers} {showAnnotations} />
-		<Legend
-			layers={data.meta.layers}
-			bind:visibleLayers
-			bind:showAnnotations
-			{countsByLayer}
-		/>
-		<Timeline
-			dates={data.meta.dates}
-			bind:selectedIndex
-			bind:playing
-			{featureCount}
-			{lastUpdate}
-		/>
-		<div class="source-credit">Source : Institute for the Study of War and AEI's Critical Threats Project.</div>
-	{:else}
-		<div class="loading">Chargement des données…</div>
-	{/if}
+	<div class="map-frame">
+		{#if data}
+			<Map {data} {selectedDate} {visibleLayers} {showAnnotations} />
+			<Legend
+				layers={data.meta.layers}
+				bind:visibleLayers
+				bind:showAnnotations
+				{countsByLayer}
+			/>
+			<Timeline
+				dates={data.meta.dates}
+				bind:selectedIndex
+				bind:playing
+				{featureCount}
+				{lastUpdate}
+			/>
+			<div class="source-credit">Source : Institute for the Study of War and AEI's Critical Threats Project.</div>
+		{:else}
+			<div class="loading">Chargement des données…</div>
+		{/if}
+	</div>
 </div>
 
 <style>
 	.page-root {
+		width: 100%;
+	}
+
+	.map-frame {
 		position: relative;
 		width: 100%;
-		height: 800px;
+		aspect-ratio: 16 / 10;
 		overflow: hidden;
 	}
 
-	:global(body.standalone) .page-root {
+	:global(body.standalone) .map-frame {
+		aspect-ratio: auto;
 		height: 100dvh;
 	}
 
