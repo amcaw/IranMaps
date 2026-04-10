@@ -21,7 +21,7 @@
 	let popup: maplibregl.Popup | null = null;
 
 	// Bounding box from the data (with padding)
-	const DATA_BOUNDS: [number, number, number, number] = [32.34, 22.19, 63.43, 39.04];
+	const DATA_BOUNDS: [number, number, number, number] = [28, 18, 66, 42];
 
 	// Country labels in French with approximate centroids
 	const COUNTRY_LABELS: { name: string; lng: number; lat: number }[] = [
@@ -138,7 +138,7 @@
 
 		map.fitBounds(
 			[[DATA_BOUNDS[0], DATA_BOUNDS[1]], [DATA_BOUNDS[2], DATA_BOUNDS[3]]],
-			{ padding: 60 }
+			{ padding: 40 }
 		);
 
 		map.addControl(new maplibregl.NavigationControl(), 'top-right');
@@ -228,6 +228,7 @@
 				map.getCanvas().style.cursor = '';
 				popup?.remove();
 			});
+
 		});
 
 		// Mini map (globe medallion)

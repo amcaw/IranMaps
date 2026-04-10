@@ -34,7 +34,7 @@ export const fr: Record<string, string> = {
 
   // UI
   'Strikes across the Middle East': 'Frappes au Moyen-Orient',
-  'US–Israel vs Iran crisis, starting Feb 28, 2026': 'Crise États-Unis–Israël contre Iran, depuis le 28 fév. 2026',
+  'US–Israel vs Iran crisis, starting Feb 28, 2026': 'Guerre États-Unis–Israël contre Iran, depuis le 28 fév. 2026',
   'strikes': 'frappes',
   'Loading strike data...': 'Chargement des données…',
 };

@@ -14,6 +14,7 @@
 	let visibleLayers = $state(new Set<string>());
 
 	let selectedDate = $derived((data as StrikeData | null)?.meta.dates[selectedIndex] ?? '');
+	let lastUpdate = $derived((data as StrikeData | null)?.meta.generated ?? '');
 
 	let featureCount = $derived.by(() => {
 		if (!data) return 0;
@@ -58,11 +59,26 @@
 		bind:playing
 		{featureCount}
 	/>
+	<div class="last-update">
+		Dernière mise à jour : {new Date(lastUpdate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })}
+	</div>
 {:else}
 	<div class="loading">Chargement des données…</div>
 {/if}
 
 <style>
+	.last-update {
+		position: absolute;
+		bottom: 100px;
+		left: 16px;
+		font-size: 10px;
+		color: var(--text-dim);
+		background: rgba(20, 20, 20, 0.7);
+		padding: 4px 8px;
+		border-radius: 4px;
+		z-index: 10;
+	}
+
 	.loading {
 		position: fixed;
 		inset: 0;
