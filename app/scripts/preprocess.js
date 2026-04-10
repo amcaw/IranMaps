@@ -32,7 +32,13 @@ function isWebMercator(coords) {
 }
 
 function extractDate(props) {
-  return props.strikedate || props.AssessedDa || props.event_date || props.date || props.Date || props.post_date || props.Post_Date || null;
+  const raw = props.strikedate || props.AssessedDa || props.event_date || props.date || props.Date || props.post_date || props.Post_Date || null;
+  if (!raw) return null;
+  // Normalize ISO timestamps (from shpjs) to YYYY-MM-DD
+  if (typeof raw === 'string' && raw.includes('T')) {
+    return raw.slice(0, 10);
+  }
+  return raw;
 }
 
 function processLayer(layerDef) {
