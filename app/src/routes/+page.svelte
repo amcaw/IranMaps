@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { StrikeData } from '$lib/types';
-	import { initPym } from '$lib/pym';
+	import { initPym, sendHeight } from '$lib/pym';
 	import Map from '$lib/components/Map.svelte';
 	import Legend from '$lib/components/Legend.svelte';
 	import Timeline from '$lib/components/Timeline.svelte';
@@ -43,31 +43,41 @@
 		if (data) {
 			visibleLayers = new Set(data.meta.layers.map((l) => l.id));
 			selectedIndex = data.meta.dates.length - 1;
+			sendHeight();
 		}
 	});
 </script>
 
-{#if data}
-	<Map {data} {selectedDate} {visibleLayers} {showAnnotations} />
-	<Legend
-		layers={data.meta.layers}
-		bind:visibleLayers
-		bind:showAnnotations
-		{countsByLayer}
-	/>
-	<Timeline
-		dates={data.meta.dates}
-		bind:selectedIndex
-		bind:playing
-		{featureCount}
-		{lastUpdate}
-	/>
-	<div class="source-credit">Source : Institute for the Study of War and AEI's Critical Threats Project.</div>
-{:else}
-	<div class="loading">Chargement des données…</div>
-{/if}
+<div class="page-root">
+	{#if data}
+		<Map {data} {selectedDate} {visibleLayers} {showAnnotations} />
+		<Legend
+			layers={data.meta.layers}
+			bind:visibleLayers
+			bind:showAnnotations
+			{countsByLayer}
+		/>
+		<Timeline
+			dates={data.meta.dates}
+			bind:selectedIndex
+			bind:playing
+			{featureCount}
+			{lastUpdate}
+		/>
+		<div class="source-credit">Source : Institute for the Study of War and AEI's Critical Threats Project.</div>
+	{:else}
+		<div class="loading">Chargement des données…</div>
+	{/if}
+</div>
 
 <style>
+	.page-root {
+		position: relative;
+		width: 100%;
+		height: 100vh;
+		overflow: hidden;
+	}
+
 	.source-credit {
 		position: absolute;
 		bottom: 6px;
@@ -82,7 +92,7 @@
 	}
 
 	.loading {
-		position: fixed;
+		position: absolute;
 		inset: 0;
 		display: flex;
 		align-items: center;
