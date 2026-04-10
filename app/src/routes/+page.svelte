@@ -80,11 +80,12 @@
 	.page-root {
 		position: relative;
 		width: 100%;
+		height: 800px;
+		overflow: hidden;
 	}
 
 	:global(body.standalone) .page-root {
 		height: 100dvh;
-		overflow: hidden;
 	}
 
 	.source-credit {
