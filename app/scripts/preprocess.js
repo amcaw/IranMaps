@@ -35,8 +35,11 @@ function extractDate(props) {
   const raw = props.strikedate || props.AssessedDa || props.event_date || props.date || props.Date || props.post_date || props.Post_Date || null;
   if (!raw) return null;
   // Normalize ISO timestamps (from shpjs) to YYYY-MM-DD
+  // shpjs shifts dates by timezone offset, so add 12h to snap to correct day
   if (typeof raw === 'string' && raw.includes('T')) {
-    return raw.slice(0, 10);
+    const d = new Date(raw);
+    d.setUTCHours(d.getUTCHours() + 12);
+    return d.toISOString().slice(0, 10);
   }
   return raw;
 }
@@ -84,8 +87,14 @@ function processLayer(layerDef) {
       lon, lat, date,
       layer: layerDef.id,
       city: props.city || props.City || props.location || props.Location || '',
-      type: props.event_type || props.Event_Type || props.eventType1 || props.site_type || props.Site_Type_ || '',
+      type: props.event_type || props.Event_Type || props.eventType1 || '',
       actor: props.actor || props.Actor || '',
+      country: props.country || props.Country || '',
+      province: props.province || props.Province || props.governate || '',
+      siteType: props.siteStype || props.site_type || props.Site_Type_ || '',
+      source: props.source_1 || props.Source_1 || '',
+      vessel: props.vesselname || props.Vessel_Nam || '',
+      flag: props.flag || props.Flag || '',
     });
   }
 

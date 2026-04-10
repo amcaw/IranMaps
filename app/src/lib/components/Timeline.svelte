@@ -3,12 +3,14 @@
 		dates,
 		selectedIndex = $bindable(),
 		playing = $bindable(),
-		featureCount
+		featureCount,
+		lastUpdate
 	}: {
 		dates: string[];
 		selectedIndex: number;
 		playing: boolean;
 		featureCount: number;
+		lastUpdate: string;
 	} = $props();
 
 	let interval: ReturnType<typeof setInterval> | null = null;
@@ -48,6 +50,7 @@
 		<div class="date-display">
 			<span class="current-date">{formatDate(dates[selectedIndex])}</span>
 			<span class="feature-count">{featureCount.toLocaleString()} frappes</span>
+			<span class="last-update">Dernière mise à jour : {new Date(lastUpdate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })}</span>
 		</div>
 	</div>
 	<div class="slider-row">
@@ -119,6 +122,12 @@
 	.feature-count {
 		font-size: 12px;
 		color: var(--text-dim);
+	}
+
+	.last-update {
+		font-size: 10px;
+		color: var(--text-dim);
+		opacity: 0.7;
 	}
 
 	.slider-row {

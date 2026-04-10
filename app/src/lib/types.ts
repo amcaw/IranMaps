@@ -6,6 +6,12 @@ export interface StrikeFeature {
 	city: string;
 	type: string;
 	actor: string;
+	country: string;
+	province: string;
+	siteType: string;
+	source: string;
+	vessel: string;
+	flag: string;
 }
 
 export interface LayerMeta {

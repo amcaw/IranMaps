@@ -5,10 +5,12 @@
 	let {
 		layers,
 		visibleLayers = $bindable(),
+		showAnnotations = $bindable(),
 		countsByLayer
 	}: {
 		layers: LayerMeta[];
 		visibleLayers: Set<string>;
+		showAnnotations: boolean;
 		countsByLayer: Record<string, number>;
 	} = $props();
 
@@ -48,6 +50,12 @@
 				</button>
 			{/each}
 		</div>
+		<button class="annotation-toggle" onclick={() => showAnnotations = !showAnnotations}>
+			<span class="toggle-switch" class:on={showAnnotations}>
+				<span class="toggle-knob"></span>
+			</span>
+			<span class="toggle-label">Annotations</span>
+		</button>
 	{/if}
 </div>
 
@@ -143,6 +151,59 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+
+	.annotation-toggle {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 12px;
+		color: var(--text-dim);
+		cursor: pointer;
+		padding: 8px 6px 2px;
+		margin-top: 4px;
+		border: none;
+		border-top: 1px solid var(--border);
+		background: transparent;
+		text-align: left;
+		width: 100%;
+	}
+
+	.annotation-toggle:hover .toggle-label {
+		color: var(--text);
+	}
+
+	.toggle-switch {
+		width: 28px;
+		height: 16px;
+		border-radius: 8px;
+		background: var(--border);
+		position: relative;
+		flex-shrink: 0;
+		transition: background 0.2s;
+	}
+
+	.toggle-switch.on {
+		background: #555;
+	}
+
+	.toggle-knob {
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background: #ccc;
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		transition: transform 0.2s;
+	}
+
+	.toggle-switch.on .toggle-knob {
+		transform: translateX(12px);
+	}
+
+	.toggle-label {
+		transition: color 0.15s;
 	}
 
 	.layer-count {

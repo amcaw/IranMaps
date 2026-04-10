@@ -7,11 +7,13 @@
 	let {
 		data,
 		selectedDate,
-		visibleLayers
+		visibleLayers,
+		showAnnotations
 	}: {
 		data: StrikeData;
 		selectedDate: string;
 		visibleLayers: Set<string>;
+		showAnnotations: boolean;
 	} = $props();
 
 	let mapContainer: HTMLDivElement;
@@ -19,6 +21,7 @@
 	let map: maplibregl.Map | null = null;
 	let miniMap: maplibregl.Map | null = null;
 	let popup: maplibregl.Popup | null = null;
+	let annotationLayerIds: string[] = [];
 
 	// Bounding box from the data (with padding)
 	const DATA_BOUNDS: [number, number, number, number] = [28, 18, 66, 42];
@@ -56,7 +59,13 @@
 					date: f.date,
 					city: f.city,
 					type: f.type,
-					actor: f.actor
+					actor: f.actor,
+					country: f.country,
+					province: f.province,
+					siteType: f.siteType,
+					source: f.source,
+					vessel: f.vessel,
+					flag: f.flag
 				}
 			});
 		}
@@ -81,6 +90,121 @@
 		}
 		stops.push('#888');
 		return stops as maplibregl.ExpressionSpecification;
+	}
+
+	// ── Annotations ────────────────────────────────────────────────
+
+	interface AnnCircle {
+		id: string;
+		coordinates: number[][];
+		color: string;
+		opacity?: number;
+		fillOpacity?: number;
+		dasharray?: number[];
+		width?: number;
+	}
+
+	interface AnnArrow {
+		id: string;
+		from: [number, number];
+		to: [number, number];
+		curve: number;
+		color: string;
+		width?: number;
+		opacity?: number;
+		label?: string;
+		labelPosition?: 'start' | 'middle' | 'end';
+		labelAnchor?: string;
+		fontSize?: number;
+	}
+
+	interface Annotations {
+		circles?: AnnCircle[];
+		arrows?: AnnArrow[];
+	}
+
+	function quadraticBezier(from: number[], to: number[], curve: number): number[][] {
+		const dx = to[0] - from[0];
+		const dy = to[1] - from[1];
+		const cx = (from[0] + to[0]) / 2 - dy * curve;
+		const cy = (from[1] + to[1]) / 2 + dx * curve;
+		const pts: number[][] = [];
+		for (let i = 0; i <= 50; i++) {
+			const t = i / 50;
+			pts.push([
+				(1 - t) * (1 - t) * from[0] + 2 * (1 - t) * t * cx + t * t * to[0],
+				(1 - t) * (1 - t) * from[1] + 2 * (1 - t) * t * cy + t * t * to[1]
+			]);
+		}
+		return pts;
+	}
+
+	function addArrowhead(pts: number[][]): number[][] {
+		const last = pts[pts.length - 1];
+		const prev = pts[pts.length - 3];
+		const angle = Math.atan2(last[1] - prev[1], last[0] - prev[0]);
+		const size = 0.15;
+		return [
+			[last[0] - size * Math.cos(angle - 0.4), last[1] - size * Math.sin(angle - 0.4)],
+			last,
+			[last[0] - size * Math.cos(angle + 0.4), last[1] - size * Math.sin(angle + 0.4)]
+		];
+	}
+
+	function loadAnnotations(map: maplibregl.Map, ann: Annotations) {
+		const ids: string[] = [];
+
+		// Circles
+		if (ann.circles?.length) {
+			for (const c of ann.circles) {
+				const srcId = `ann-circle-${c.id}`;
+				map.addSource(srcId, { type: 'geojson', data: {
+					type: 'FeatureCollection',
+					features: [{ type: 'Feature', geometry: { type: 'Polygon', coordinates: c.coordinates as any }, properties: {} }]
+				}});
+				const fillId = `${srcId}-fill`;
+				const lineId = `${srcId}-line`;
+				map.addLayer({ id: fillId, type: 'fill', source: srcId, paint: { 'fill-color': c.color, 'fill-opacity': c.fillOpacity ?? 0.05 } });
+				const linePaint: Record<string, any> = { 'line-color': c.color, 'line-width': c.width ?? 2, 'line-opacity': c.opacity ?? 0.7 };
+				if (c.dasharray) linePaint['line-dasharray'] = c.dasharray;
+				map.addLayer({ id: lineId, type: 'line', source: srcId, paint: linePaint });
+				ids.push(fillId, lineId);
+			}
+		}
+
+		// Arrows
+		if (ann.arrows?.length) {
+			const lineFeatures: GeoJSON.Feature[] = [];
+			const arrowFeatures: GeoJSON.Feature[] = [];
+			const labelFeatures: GeoJSON.Feature[] = [];
+
+			for (const a of ann.arrows) {
+				const pts = quadraticBezier(a.from, a.to, a.curve);
+				lineFeatures.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: pts }, properties: { color: a.color, width: a.width ?? 1.2, opacity: a.opacity ?? 0.5 } });
+				arrowFeatures.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: addArrowhead(pts) }, properties: { color: a.color, opacity: a.opacity ?? 0.5 } });
+				if (a.label) {
+					const pos = a.labelPosition === 'end' ? pts[pts.length - 1] : a.labelPosition === 'middle' ? pts[Math.floor(pts.length / 2)] : pts[0];
+					const anchor = a.labelAnchor ?? 'bottom';
+					labelFeatures.push({ type: 'Feature', geometry: { type: 'Point', coordinates: pos }, properties: { label: a.label, color: a.color, fontSize: a.fontSize ?? 13, anchor } });
+				}
+			}
+
+			map.addSource('ann-arrows', { type: 'geojson', data: { type: 'FeatureCollection', features: lineFeatures } });
+			map.addLayer({ id: 'ann-arrows-line', type: 'line', source: 'ann-arrows', paint: { 'line-color': ['get', 'color'], 'line-width': ['get', 'width'], 'line-opacity': ['get', 'opacity'] }, layout: { 'line-cap': 'round' } });
+			ids.push('ann-arrows-line');
+
+			map.addSource('ann-arrowheads', { type: 'geojson', data: { type: 'FeatureCollection', features: arrowFeatures } });
+			map.addLayer({ id: 'ann-arrowheads-line', type: 'line', source: 'ann-arrowheads', paint: { 'line-color': ['get', 'color'], 'line-width': 1.5, 'line-opacity': ['get', 'opacity'] }, layout: { 'line-cap': 'round', 'line-join': 'round' } });
+			ids.push('ann-arrowheads-line');
+
+			if (labelFeatures.length) {
+				map.addSource('ann-labels', { type: 'geojson', data: { type: 'FeatureCollection', features: labelFeatures } });
+				map.addLayer({ id: 'ann-labels-text', type: 'symbol', source: 'ann-labels', layout: { 'text-field': ['get', 'label'], 'text-size': ['get', 'fontSize'], 'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'], 'text-anchor': ['get', 'anchor'], 'text-offset': [0, 0], 'text-allow-overlap': true }, paint: { 'text-color': ['get', 'color'], 'text-halo-color': 'rgba(0,0,0,0.8)', 'text-halo-width': 2 } });
+				ids.push('ann-labels-text');
+			}
+		}
+
+		annotationLayerIds = ids;
 	}
 
 	function updateMiniMapViewport() {
@@ -197,17 +321,17 @@
 				}
 			});
 
-			// Hover popup
-			popup = new maplibregl.Popup({
-				closeButton: false,
-				closeOnClick: false,
-				offset: 10,
-				className: 'strike-popup'
+			// Cursor on hover
+			map!.on('mouseenter', 'strikes-circle', () => {
+				if (map) map.getCanvas().style.cursor = 'pointer';
+			});
+			map!.on('mouseleave', 'strikes-circle', () => {
+				if (map) map.getCanvas().style.cursor = '';
 			});
 
-			map!.on('mouseenter', 'strikes-circle', (e) => {
+			// Click popup
+			map!.on('click', 'strikes-circle', (e) => {
 				if (!map || !e.features?.length) return;
-				map.getCanvas().style.cursor = 'pointer';
 				const f = e.features[0];
 				const props = f.properties;
 				const layerMeta = data.meta.layers.find(l => l.id === props.layer);
@@ -216,19 +340,29 @@
 				const label = layerMeta ? t(layerMeta.label) : props.layer;
 				const dateStr = new Date(props.date + 'T12:00:00Z').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 				let html = `<div class="popup-layer" style="color:${layerMeta?.color || '#fff'}">${label}</div>`;
-				if (props.city) html += `<div class="popup-city">${props.city}</div>`;
+				const location = [props.city, props.province, props.country].filter(Boolean).join(', ');
+				if (location) html += `<div class="popup-city">${location}</div>`;
 				html += `<div class="popup-date">${dateStr}</div>`;
 				if (props.type) html += `<div class="popup-type">${t(props.type)}</div>`;
+				if (props.siteType && t(props.siteType)) html += `<div class="popup-detail">${t(props.siteType)}</div>`;
+				if (props.actor && props.actor !== 'UNK') html += `<div class="popup-detail">${props.actor}</div>`;
+				if (props.vessel) html += `<div class="popup-detail">${props.vessel}${props.flag ? ` (${props.flag})` : ''}</div>`;
+				if (props.source) html += `<a class="popup-source" href="${props.source}" target="_blank" rel="noopener">Source <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`;
 
-				popup!.setLngLat(coords).setHTML(html).addTo(map!);
+				if (popup) popup.remove();
+				popup = new maplibregl.Popup({
+					closeButton: true,
+					closeOnClick: true,
+					offset: 10,
+					className: 'strike-popup'
+				}).setLngLat(coords).setHTML(html).addTo(map!);
 			});
 
-			map!.on('mouseleave', 'strikes-circle', () => {
-				if (!map) return;
-				map.getCanvas().style.cursor = '';
-				popup?.remove();
-			});
-
+			// Load annotations
+			fetch(`${import.meta.env.BASE_URL}data/annotations.json`)
+				.then(r => r.json())
+				.then((ann: Annotations) => { if (map) loadAnnotations(map, ann); })
+				.catch(() => {});
 		});
 
 		// Mini map (globe medallion)
@@ -284,8 +418,7 @@
 		});
 
 		// Sync mini map viewport on main map move
-		map.on('moveend', updateMiniMapViewport);
-		map.on('zoomend', updateMiniMapViewport);
+		map.on('move', updateMiniMapViewport);
 	});
 
 	onDestroy(() => {
@@ -299,6 +432,15 @@
 		if (!map?.getSource('strikes')) return;
 		const geojson = buildGeoJSON(date, layers);
 		(map.getSource('strikes') as maplibregl.GeoJSONSource).setData(geojson);
+	});
+
+	$effect(() => {
+		const visible = showAnnotations;
+		if (!map || !annotationLayerIds.length) return;
+		const visibility = visible ? 'visible' : 'none';
+		for (const id of annotationLayerIds) {
+			if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visibility);
+		}
 	});
 </script>
 
@@ -350,6 +492,17 @@
 		box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 	}
 
+	:global(.strike-popup .maplibregl-popup-close-button) {
+		color: #888;
+		font-size: 18px;
+		padding: 2px 6px;
+	}
+
+	:global(.strike-popup .maplibregl-popup-close-button:hover) {
+		color: #fff;
+		background: transparent;
+	}
+
 	:global(.strike-popup .maplibregl-popup-tip) {
 		border-top-color: #1a1a1a;
 	}
@@ -375,5 +528,22 @@
 		color: #aaa;
 		font-size: 11px;
 		margin-top: 2px;
+	}
+
+	:global(.popup-detail) {
+		color: #777;
+		font-size: 11px;
+	}
+
+	:global(.popup-source) {
+		display: inline-block;
+		color: #4a9eff;
+		font-size: 11px;
+		margin-top: 3px;
+		text-decoration: none;
+	}
+
+	:global(.popup-source:hover) {
+		text-decoration: underline;
 	}
 </style>

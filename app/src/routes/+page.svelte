@@ -12,6 +12,7 @@
 	let selectedIndex = $state(0);
 	let playing = $state(false);
 	let visibleLayers = $state(new Set<string>());
+	let showAnnotations = $state(true);
 
 	let selectedDate = $derived((data as StrikeData | null)?.meta.dates[selectedIndex] ?? '');
 	let lastUpdate = $derived((data as StrikeData | null)?.meta.generated ?? '');
@@ -47,10 +48,11 @@
 </script>
 
 {#if data}
-	<Map {data} {selectedDate} {visibleLayers} />
+	<Map {data} {selectedDate} {visibleLayers} {showAnnotations} />
 	<Legend
 		layers={data.meta.layers}
 		bind:visibleLayers
+		bind:showAnnotations
 		{countsByLayer}
 	/>
 	<Timeline
@@ -58,25 +60,25 @@
 		bind:selectedIndex
 		bind:playing
 		{featureCount}
+		{lastUpdate}
 	/>
-	<div class="last-update">
-		Dernière mise à jour : {new Date(lastUpdate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })}
-	</div>
+	<div class="source-credit">Source : Institute for the Study of War and AEI's Critical Threats Project.</div>
 {:else}
 	<div class="loading">Chargement des données…</div>
 {/if}
 
 <style>
-	.last-update {
+	.source-credit {
 		position: absolute;
-		bottom: 100px;
+		bottom: 6px;
 		left: 16px;
-		font-size: 10px;
+		font-size: 11px;
 		color: var(--text-dim);
-		background: rgba(20, 20, 20, 0.7);
-		padding: 4px 8px;
+		background: rgba(10, 10, 10, 0.75);
+		padding: 4px 10px;
 		border-radius: 4px;
 		z-index: 10;
+		font-weight: 500;
 	}
 
 	.loading {
