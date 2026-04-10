@@ -61,11 +61,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
           git add data/geojson/*.geojson app/static/data/strikes.json
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
             git commit -m "Update GeoJSON and strikes.json"
+            git pull --rebase origin main
             git push
           fi
