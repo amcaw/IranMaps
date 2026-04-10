@@ -23,6 +23,12 @@
 	let popup: maplibregl.Popup | null = null;
 	let annotationLayerIds: string[] = [];
 
+	function clearHighlight() {
+		if (map?.getSource('highlight')) {
+			(map.getSource('highlight') as maplibregl.GeoJSONSource).setData({ type: 'FeatureCollection', features: [] });
+		}
+	}
+
 	// Bounding box from the data (with padding)
 	const DATA_BOUNDS: [number, number, number, number] = [28, 18, 66, 42];
 
@@ -321,6 +327,12 @@
 				}
 			});
 
+			// Highlight source (layer added after strikes so it renders on top)
+			map!.addSource('highlight', {
+				type: 'geojson',
+				data: { type: 'FeatureCollection', features: [] }
+			});
+
 			// Cursor on hover
 			map!.on('mouseenter', 'strikes-circle', () => {
 				if (map) map.getCanvas().style.cursor = 'pointer';
@@ -349,13 +361,48 @@
 				if (props.vessel) html += `<div class="popup-detail">${props.vessel}${props.flag ? ` (${props.flag})` : ''}</div>`;
 				if (props.source) html += `<a class="popup-source" href="${props.source}" target="_blank" rel="noopener">Source <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`;
 
-				if (popup) popup.remove();
+				// Remove old popup without clearing highlight
+				if (popup) {
+					popup.off('close', clearHighlight);
+					popup.remove();
+				}
+
+				// Highlight clicked point
+				(map!.getSource('highlight') as maplibregl.GeoJSONSource).setData({
+					type: 'FeatureCollection',
+					features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: coords }, properties: {} }]
+				});
+
 				popup = new maplibregl.Popup({
 					closeButton: true,
-					closeOnClick: true,
+					closeOnClick: false,
 					offset: 10,
 					className: 'strike-popup'
 				}).setLngLat(coords).setHTML(html).addTo(map!);
+
+				popup.on('close', clearHighlight);
+			});
+
+			// Close popup when clicking empty space
+			map!.on('click', (e) => {
+				const features = map!.queryRenderedFeatures(e.point, { layers: ['strikes-circle'] });
+				if (!features.length && popup) {
+					popup.remove();
+				}
+			});
+
+			// Add highlight ring layer on top of everything
+			map!.addLayer({
+				id: 'highlight-ring',
+				type: 'circle',
+				source: 'highlight',
+				paint: {
+					'circle-radius': ['interpolate', ['linear'], ['zoom'], 3, 5, 8, 8, 14, 14],
+					'circle-color': 'transparent',
+					'circle-stroke-width': 2.5,
+					'circle-stroke-color': '#ffffff',
+					'circle-stroke-opacity': 1
+				}
 			});
 
 			// Load annotations
