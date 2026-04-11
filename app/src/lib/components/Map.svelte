@@ -263,12 +263,13 @@
 			},
 			maxBounds: [DATA_BOUNDS[0] - 5, DATA_BOUNDS[1] - 5, DATA_BOUNDS[2] + 5, DATA_BOUNDS[3] + 5],
 			maxZoom: 14,
-			minZoom: 3
+			minZoom: 2
 		});
 
+		const isMobile = window.innerWidth <= 768;
 		map.fitBounds(
 			[[DATA_BOUNDS[0], DATA_BOUNDS[1]], [DATA_BOUNDS[2], DATA_BOUNDS[3]]],
-			{ padding: 40 }
+			{ padding: isMobile ? 10 : 40 }
 		);
 
 		map.addControl(new maplibregl.NavigationControl(), 'top-right');

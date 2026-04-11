@@ -5,16 +5,12 @@
 	let {
 		layers,
 		visibleLayers = $bindable(),
-		showAnnotations = $bindable(),
 		countsByLayer
 	}: {
 		layers: LayerMeta[];
 		visibleLayers: Set<string>;
-		showAnnotations: boolean;
 		countsByLayer: Record<string, number>;
 	} = $props();
-
-	let open = $state(window.innerWidth > 768);
 
 	function toggle(id: string) {
 		const next = new Set(visibleLayers);
@@ -25,94 +21,31 @@
 </script>
 
 <div class="legend">
-	<h2 class="title">{t('Strikes across the Middle East')}</h2>
-	<p class="subtitle">{t('US–Israel vs Iran crisis, starting Feb 28, 2026')}</p>
-	<button class="toggle-btn" onclick={() => open = !open} aria-label={open ? 'Masquer' : 'Afficher'}>
-		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-			{#if open}
-				<polyline points="18 15 12 9 6 15" />
-			{:else}
-				<polyline points="6 9 12 15 18 9" />
-			{/if}
-		</svg>
-	</button>
-	{#if open}
-		<div class="layers">
-			{#each layers as layer}
-				<button
-					class="layer-row"
-					class:dimmed={!visibleLayers.has(layer.id)}
-					onclick={() => toggle(layer.id)}
-				>
-					<span class="dot" style="background: {layer.color}"></span>
-					<span class="layer-label">{t(layer.label)}</span>
-					<span class="layer-count">{(countsByLayer[layer.id] || 0).toLocaleString()}</span>
-				</button>
-			{/each}
-		</div>
-		<button class="annotation-toggle" onclick={() => showAnnotations = !showAnnotations}>
-			<span class="toggle-switch" class:on={showAnnotations}>
-				<span class="toggle-knob"></span>
-			</span>
-			<span class="toggle-label">Annotations</span>
-		</button>
-	{/if}
+	<div class="layers">
+		{#each layers as layer}
+			<button
+				class="layer-row"
+				class:dimmed={!visibleLayers.has(layer.id)}
+				onclick={() => toggle(layer.id)}
+			>
+				<span class="dot" style="background: {layer.color}"></span>
+				<span class="layer-label">{t(layer.label)}</span>
+				<span class="layer-count">{(countsByLayer[layer.id] || 0).toLocaleString()}</span>
+			</button>
+		{/each}
+	</div>
 </div>
 
 <style>
 	.legend {
-		position: absolute;
-		top: 16px;
-		left: 16px;
-		background: rgba(20, 20, 20, 0.92);
-		backdrop-filter: blur(12px);
-		border: 1px solid var(--border);
-		border-radius: 12px;
+		background: var(--bg);
 		padding: 14px 16px;
-		z-index: 10;
-		width: 380px;
 	}
 
-	.toggle-btn {
-		position: absolute;
-		top: 12px;
-		right: 10px;
-		width: 32px;
-		height: 32px;
-		border-radius: 8px;
-		border: 1px solid var(--border);
-		background: rgba(255, 255, 255, 0.04);
-		color: var(--text-dim);
-		cursor: pointer;
+.layers {
 		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: background 0.15s, color 0.15s;
-	}
-
-	.toggle-btn:hover {
-		background: rgba(255, 255, 255, 0.1);
-		color: var(--text);
-	}
-
-	.title {
-		font-size: 15px;
-		font-weight: 700;
-		margin-bottom: 2px;
-		letter-spacing: -0.3px;
-		padding-right: 30px;
-	}
-
-	.subtitle {
-		font-size: 11px;
-		color: var(--text-dim);
-		margin-bottom: 4px;
-	}
-
-	.layers {
-		display: flex;
-		flex-direction: column;
-		gap: 1px;
+		flex-wrap: wrap;
+		gap: 2px 12px;
 	}
 
 	.layer-row {
@@ -147,66 +80,10 @@
 	}
 
 	.layer-label {
-		flex: 1;
 		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
 	}
 
-	.annotation-toggle {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		font-size: 12px;
-		color: var(--text-dim);
-		cursor: pointer;
-		padding: 8px 6px 2px;
-		margin-top: 4px;
-		border: none;
-		border-top: 1px solid var(--border);
-		background: transparent;
-		text-align: left;
-		width: 100%;
-	}
-
-	.annotation-toggle:hover .toggle-label {
-		color: var(--text);
-	}
-
-	.toggle-switch {
-		width: 28px;
-		height: 16px;
-		border-radius: 8px;
-		background: var(--border);
-		position: relative;
-		flex-shrink: 0;
-		transition: background 0.2s;
-	}
-
-	.toggle-switch.on {
-		background: #555;
-	}
-
-	.toggle-knob {
-		width: 12px;
-		height: 12px;
-		border-radius: 50%;
-		background: #ccc;
-		position: absolute;
-		top: 2px;
-		left: 2px;
-		transition: transform 0.2s;
-	}
-
-	.toggle-switch.on .toggle-knob {
-		transform: translateX(12px);
-	}
-
-	.toggle-label {
-		transition: color 0.15s;
-	}
-
-	.layer-count {
+.layer-count {
 		color: var(--text-dim);
 		font-size: 11px;
 		font-variant-numeric: tabular-nums;

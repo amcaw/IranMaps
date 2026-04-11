@@ -55,61 +55,59 @@
 </script>
 
 <div class="page-root">
-	<div class="map-frame">
-		{#if data}
+	{#if data}
+		<Legend
+			layers={data.meta.layers}
+			bind:visibleLayers
+			{countsByLayer}
+		/>
+		<div class="map-frame">
 			<Map {data} {selectedDate} {visibleLayers} {showAnnotations} />
-			<Legend
-				layers={data.meta.layers}
-				bind:visibleLayers
-				bind:showAnnotations
-				{countsByLayer}
-			/>
-			<Timeline
-				dates={data.meta.dates}
-				bind:selectedIndex
-				bind:playing
-				{featureCount}
-				{lastUpdate}
-			/>
-			<div class="source-credit">Source : Institute for the Study of War and AEI's Critical Threats Project.</div>
-		{:else}
-			<div class="loading">Chargement des données…</div>
-		{/if}
-	</div>
+		</div>
+		<Timeline
+			dates={data.meta.dates}
+			bind:selectedIndex
+			bind:playing
+			bind:showAnnotations
+			{featureCount}
+			{lastUpdate}
+		/>
+		<div class="source-credit">Source : Institute for the Study of War and AEI's Critical Threats Project.</div>
+	{:else}
+		<div class="loading">Chargement des données…</div>
+	{/if}
 </div>
 
 <style>
 	.page-root {
 		width: 100%;
+		height: 800px;
+		background: var(--bg);
+		display: flex;
+		flex-direction: column;
+	}
+
+	:global(body.standalone) .page-root {
+		height: 100dvh;
 	}
 
 	.map-frame {
 		position: relative;
 		width: 100%;
-		height: 800px;
+		flex: 1;
+		min-height: 300px;
 		overflow: hidden;
 	}
 
-	:global(body.standalone) .map-frame {
-		height: 100dvh;
-	}
-
 	.source-credit {
-		position: absolute;
-		bottom: 6px;
-		left: 16px;
 		font-size: 11px;
 		color: var(--text-dim);
-		background: rgba(10, 10, 10, 0.75);
-		padding: 4px 10px;
-		border-radius: 4px;
-		z-index: 10;
+		padding: 8px 16px;
 		font-weight: 500;
 	}
 
 	.loading {
-		position: absolute;
-		inset: 0;
+		flex: 1;
 		display: flex;
 		align-items: center;
 		justify-content: center;

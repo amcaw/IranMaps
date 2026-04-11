@@ -3,12 +3,14 @@
 		dates,
 		selectedIndex = $bindable(),
 		playing = $bindable(),
+		showAnnotations = $bindable(),
 		featureCount,
 		lastUpdate
 	}: {
 		dates: string[];
 		selectedIndex: number;
 		playing: boolean;
+		showAnnotations: boolean;
 		featureCount: number;
 		lastUpdate: string;
 	} = $props();
@@ -50,7 +52,15 @@
 		<div class="date-display">
 			<span class="current-date">{formatDate(dates[selectedIndex])}</span>
 			<span class="feature-count">{featureCount.toLocaleString()} frappes</span>
-			<span class="last-update">Dernière mise à jour : {new Date(lastUpdate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })}</span>
+			<span class="last-update-row">
+				<span class="last-update">Dernière mise à jour : {new Date(lastUpdate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })}</span>
+				<button class="annotation-toggle" onclick={() => showAnnotations = !showAnnotations}>
+					<span class="toggle-switch" class:on={showAnnotations}>
+						<span class="toggle-knob"></span>
+					</span>
+					<span class="toggle-label">Annotations</span>
+				</button>
+			</span>
 		</div>
 	</div>
 	<div class="slider-row">
@@ -68,18 +78,8 @@
 
 <style>
 	.timeline {
-		position: absolute;
-		bottom: 24px;
-		left: 50%;
-		transform: translateX(-50%);
-		background: rgba(20, 20, 20, 0.92);
-		backdrop-filter: blur(12px);
-		border: 1px solid var(--border);
-		border-radius: 12px;
+		background: var(--bg);
 		padding: 12px 20px;
-		min-width: 480px;
-		max-width: 600px;
-		z-index: 10;
 	}
 
 	.timeline-header {
@@ -124,10 +124,65 @@
 		color: var(--text-dim);
 	}
 
+	.last-update-row {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
 	.last-update {
 		font-size: 10px;
 		color: var(--text-dim);
 		opacity: 0.7;
+	}
+
+	.annotation-toggle {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 11px;
+		color: var(--text-dim);
+		cursor: pointer;
+		border: none;
+		background: transparent;
+		padding: 0;
+	}
+
+	.annotation-toggle:hover .toggle-label {
+		color: var(--text);
+	}
+
+	.toggle-switch {
+		width: 28px;
+		height: 16px;
+		border-radius: 8px;
+		background: var(--border);
+		position: relative;
+		flex-shrink: 0;
+		transition: background 0.2s;
+	}
+
+	.toggle-switch.on {
+		background: #555;
+	}
+
+	.toggle-knob {
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background: #ccc;
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		transition: transform 0.2s;
+	}
+
+	.toggle-switch.on .toggle-knob {
+		transform: translateX(12px);
+	}
+
+	.toggle-label {
+		transition: color 0.15s;
 	}
 
 	.slider-row {

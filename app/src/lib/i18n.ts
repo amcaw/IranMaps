@@ -1,7 +1,7 @@
 export const fr: Record<string, string> = {
   // Layer names
   'US & Israeli Strikes in Iran': 'Frappes américaines et israéliennes en Iran',
-  'Iran & Axis Response': 'Riposte de l\'Iran et de l\'Axe',
+  'Iran & Axis Response': 'Frappes de l\'Iran et du Hezbollah',
   'Israeli Strikes in Lebanon': 'Frappes israéliennes au Liban',
   'US & Israeli Strikes in Iraq': 'Frappes américaines et israéliennes en Irak',
   'Iran Strikes against Civilian Vessels': 'Frappes iraniennes contre des navires civils',
