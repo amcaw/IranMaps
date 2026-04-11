@@ -43,9 +43,8 @@
 	}
 
 .layers {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 2px 12px;
+		columns: 3;
+		column-gap: 12px;
 	}
 
 	.layer-row {

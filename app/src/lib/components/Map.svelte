@@ -508,8 +508,8 @@
 
 	.minimap-wrapper {
 		position: absolute;
-		bottom: 110px;
-		right: 16px;
+		bottom: 6px;
+		left: 16px;
 		width: 140px;
 		height: 140px;
 		border-radius: 50%;
@@ -522,6 +522,15 @@
 	.minimap {
 		width: 100%;
 		height: 100%;
+	}
+
+	@media (max-width: 768px) {
+		.minimap-wrapper {
+			width: 90px;
+			height: 90px;
+			bottom: 6px;
+			left: 10px;
+		}
 	}
 
 	:global(.minimap-wrapper .maplibregl-canvas) {
