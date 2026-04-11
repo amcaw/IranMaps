@@ -164,6 +164,7 @@
 		// Circles
 		if (ann.circles?.length) {
 			for (const c of ann.circles) {
+				const color = isDark ? c.color : '#222222';
 				const srcId = `ann-circle-${c.id}`;
 				map.addSource(srcId, { type: 'geojson', data: {
 					type: 'FeatureCollection',
@@ -171,8 +172,8 @@
 				}});
 				const fillId = `${srcId}-fill`;
 				const lineId = `${srcId}-line`;
-				map.addLayer({ id: fillId, type: 'fill', source: srcId, paint: { 'fill-color': c.color, 'fill-opacity': c.fillOpacity ?? 0.05 } });
-				const linePaint: Record<string, any> = { 'line-color': c.color, 'line-width': c.width ?? 2, 'line-opacity': c.opacity ?? 0.7 };
+				map.addLayer({ id: fillId, type: 'fill', source: srcId, paint: { 'fill-color': color, 'fill-opacity': c.fillOpacity ?? 0.05 } });
+				const linePaint: Record<string, any> = { 'line-color': color, 'line-width': c.width ?? 2, 'line-opacity': c.opacity ?? 0.7 };
 				if (c.dasharray) linePaint['line-dasharray'] = c.dasharray;
 				map.addLayer({ id: lineId, type: 'line', source: srcId, paint: linePaint });
 				ids.push(fillId, lineId);
@@ -186,13 +187,14 @@
 			const labelFeatures: GeoJSON.Feature[] = [];
 
 			for (const a of ann.arrows) {
+				const color = isDark ? a.color : '#222222';
 				const pts = quadraticBezier(a.from, a.to, a.curve);
-				lineFeatures.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: pts }, properties: { color: a.color, width: a.width ?? 1.2, opacity: a.opacity ?? 0.5 } });
-				arrowFeatures.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: addArrowhead(pts) }, properties: { color: a.color, opacity: a.opacity ?? 0.5 } });
+				lineFeatures.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: pts }, properties: { color, width: a.width ?? 1.2, opacity: a.opacity ?? 0.5 } });
+				arrowFeatures.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: addArrowhead(pts) }, properties: { color, opacity: a.opacity ?? 0.5 } });
 				if (a.label) {
 					const pos = a.labelPosition === 'end' ? pts[pts.length - 1] : a.labelPosition === 'middle' ? pts[Math.floor(pts.length / 2)] : pts[0];
 					const anchor = a.labelAnchor ?? 'bottom';
-					labelFeatures.push({ type: 'Feature', geometry: { type: 'Point', coordinates: pos }, properties: { label: a.label, color: a.color, fontSize: a.fontSize ?? 13, anchor } });
+					labelFeatures.push({ type: 'Feature', geometry: { type: 'Point', coordinates: pos }, properties: { label: a.label, color, fontSize: a.fontSize ?? 13, anchor } });
 				}
 			}
 
@@ -433,7 +435,7 @@
 				layers: [{ id: 'carto-mini', type: 'raster', source: 'carto-mini' }]
 			},
 			center: [47, 30],
-			zoom: isMobile ? 0.3 : 0.5,
+			zoom: 0,
 			interactive: false,
 			attributionControl: false
 		});
