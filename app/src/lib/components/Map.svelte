@@ -22,6 +22,7 @@
 	let miniMap: maplibregl.Map | null = null;
 	let popup: maplibregl.Popup | null = null;
 	let annotationLayerIds: string[] = [];
+	const isDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
 
 	function clearHighlight() {
 		if (map?.getSource('highlight')) {
@@ -205,7 +206,7 @@
 
 			if (labelFeatures.length) {
 				map.addSource('ann-labels', { type: 'geojson', data: { type: 'FeatureCollection', features: labelFeatures } });
-				map.addLayer({ id: 'ann-labels-text', type: 'symbol', source: 'ann-labels', layout: { 'text-field': ['get', 'label'], 'text-size': ['get', 'fontSize'], 'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'], 'text-anchor': ['get', 'anchor'], 'text-offset': [0, 0], 'text-allow-overlap': true }, paint: { 'text-color': ['get', 'color'], 'text-halo-color': 'rgba(0,0,0,0.8)', 'text-halo-width': 2 } });
+				map.addLayer({ id: 'ann-labels-text', type: 'symbol', source: 'ann-labels', layout: { 'text-field': ['get', 'label'], 'text-size': ['get', 'fontSize'], 'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'], 'text-anchor': ['get', 'anchor'], 'text-offset': [0, 0], 'text-allow-overlap': true }, paint: { 'text-color': ['get', 'color'], 'text-halo-color': isDark ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)', 'text-halo-width': 2 } });
 				ids.push('ann-labels-text');
 			}
 		}
@@ -243,23 +244,25 @@
 	}
 
 	onMount(() => {
+		const tileVariant = isDark ? 'dark_nolabels' : 'light_nolabels';
+
 		// Main map
 		map = new maplibregl.Map({
 			container: mapContainer,
 			style: {
 				version: 8,
 				sources: {
-					'carto-dark': {
+					'carto-basemap': {
 						type: 'raster',
 						tiles: [
-							'https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png',
-							'https://b.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png',
+							`https://a.basemaps.cartocdn.com/${tileVariant}/{z}/{x}/{y}@2x.png`,
+							`https://b.basemaps.cartocdn.com/${tileVariant}/{z}/{x}/{y}@2x.png`,
 						],
 						tileSize: 256,
 						attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
 					}
 				},
-				layers: [{ id: 'carto-dark', type: 'raster', source: 'carto-dark' }]
+				layers: [{ id: 'carto-basemap', type: 'raster', source: 'carto-basemap' }]
 			},
 			maxBounds: [DATA_BOUNDS[0] - 5, DATA_BOUNDS[1] - 5, DATA_BOUNDS[2] + 5, DATA_BOUNDS[3] + 5],
 			maxZoom: 14,
@@ -295,8 +298,8 @@
 					'text-ignore-placement': false
 				},
 				paint: {
-					'text-color': '#555',
-					'text-halo-color': 'rgba(0,0,0,0.7)',
+					'text-color': isDark ? '#777' : '#999',
+					'text-halo-color': isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)',
 					'text-halo-width': 1.5
 				}
 			});
@@ -419,15 +422,15 @@
 			style: {
 				version: 8,
 				sources: {
-					'carto-dark-mini': {
+					'carto-mini': {
 						type: 'raster',
 						tiles: [
-							'https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
+							`https://a.basemaps.cartocdn.com/${tileVariant}/{z}/{x}/{y}.png`,
 						],
 						tileSize: 256
 					}
 				},
-				layers: [{ id: 'carto-dark-mini', type: 'raster', source: 'carto-dark-mini' }]
+				layers: [{ id: 'carto-mini', type: 'raster', source: 'carto-mini' }]
 			},
 			center: [40, 30],
 			zoom: isMobile ? 0.2 : 0.5,
@@ -515,7 +518,7 @@
 		border-radius: 50%;
 		overflow: hidden;
 		border: 2px solid var(--border);
-		box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+		box-shadow: 0 4px 16px rgba(0,0,0,0.3);
 		z-index: 10;
 	}
 
@@ -538,30 +541,30 @@
 	}
 
 	:global(.strike-popup .maplibregl-popup-content) {
-		background: #1a1a1a;
-		color: #e0e0e0;
-		border: 1px solid #333;
+		background: var(--surface);
+		color: var(--text);
+		border: 1px solid var(--border);
 		border-radius: 6px;
 		padding: 8px 12px;
 		font-family: 'Montserrat', sans-serif;
 		font-size: 13px;
 		line-height: 1.4;
-		box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+		box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 	}
 
 	:global(.strike-popup .maplibregl-popup-close-button) {
-		color: #888;
+		color: var(--text-dim);
 		font-size: 18px;
 		padding: 2px 6px;
 	}
 
 	:global(.strike-popup .maplibregl-popup-close-button:hover) {
-		color: #fff;
+		color: var(--text);
 		background: transparent;
 	}
 
 	:global(.strike-popup .maplibregl-popup-tip) {
-		border-top-color: #1a1a1a;
+		border-top-color: var(--surface);
 	}
 
 	:global(.popup-layer) {
@@ -577,24 +580,24 @@
 	}
 
 	:global(.popup-date) {
-		color: #888;
+		color: var(--text-dim);
 		font-size: 12px;
 	}
 
 	:global(.popup-type) {
-		color: #aaa;
+		color: var(--text-dim);
 		font-size: 11px;
 		margin-top: 2px;
 	}
 
 	:global(.popup-detail) {
-		color: #777;
+		color: var(--text-dim);
 		font-size: 11px;
 	}
 
 	:global(.popup-source) {
 		display: inline-block;
-		color: #4a9eff;
+		color: var(--accent);
 		font-size: 11px;
 		margin-top: 3px;
 		text-decoration: none;

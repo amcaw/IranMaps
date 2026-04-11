@@ -105,7 +105,7 @@
 	}
 
 	.play-btn:hover {
-		background: #222;
+		background: var(--surface);
 	}
 
 	.date-display {
@@ -163,14 +163,14 @@
 	}
 
 	.toggle-switch.on {
-		background: #555;
+		background: var(--accent);
 	}
 
 	.toggle-knob {
 		width: 12px;
 		height: 12px;
 		border-radius: 50%;
-		background: #ccc;
+		background: var(--bg);
 		position: absolute;
 		top: 2px;
 		left: 2px;

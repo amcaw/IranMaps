@@ -71,7 +71,7 @@
 	}
 
 	.layer-row:hover {
-		background: rgba(255, 255, 255, 0.05);
+		background: var(--surface);
 	}
 
 	.layer-row.dimmed {
