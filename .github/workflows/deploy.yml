@@ -10,7 +10,6 @@ on:
 
 jobs:
   deploy:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: write
