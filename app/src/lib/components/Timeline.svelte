@@ -47,7 +47,7 @@
 </script>
 
 <div class="timeline">
-	<div class="timeline-header">
+	<div class="row-top">
 		<button class="play-btn" onclick={togglePlay} aria-label={playing ? 'Pause' : 'Play'}>
 			<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
 				{#if playing}
@@ -58,23 +58,19 @@
 				{/if}
 			</svg>
 		</button>
-		<div class="date-display">
-			<span class="current-date">{formatDate(dates[selectedIndex])}</span>
-			<span class="feature-count">{featureCount.toLocaleString()} frappes</span>
+		<span class="current-date">{formatDate(dates[selectedIndex])}</span>
+		<span class="feature-count">{featureCount.toLocaleString()} frappes</span>
+		<div class="spacer"></div>
+		<div class="mode-tabs">
+			<button class="mode-tab" class:active={cumulative} onclick={() => cumulative = true}>Cumulatif</button>
+			<button class="mode-tab" class:active={!cumulative} onclick={() => cumulative = false}>Jour par jour</button>
 		</div>
-		<div class="header-right">
-			<div class="mode-tabs">
-				<button class="mode-tab" class:active={cumulative} onclick={() => cumulative = true}>Cumulatif</button>
-				<button class="mode-tab" class:active={!cumulative} onclick={() => cumulative = false}>Jour par jour</button>
-			</div>
-			<button class="annotation-toggle" class:disabled={!cumulative} onclick={() => { if (cumulative) showAnnotations = !showAnnotations; }}>
-				<span class="toggle-switch" class:on={showAnnotations && cumulative}>
-					<span class="toggle-knob"></span>
-				</span>
-				<span class="toggle-label">Annotations</span>
-			</button>
-			<span class="last-update">Maj : {new Date(lastUpdate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/Paris' })}</span>
-		</div>
+		<button class="annotation-toggle" class:disabled={!cumulative} onclick={() => { if (cumulative) showAnnotations = !showAnnotations; }}>
+			<span class="toggle-switch" class:on={showAnnotations && cumulative}>
+				<span class="toggle-knob"></span>
+			</span>
+			<span class="toggle-label">Annotations</span>
+		</button>
 	</div>
 	<div class="slider-row">
 		<span class="date-label">{formatDate(dates[0])}</span>
@@ -86,34 +82,40 @@
 			class="slider"
 		/>
 		<span class="date-label">{formatDate(dates[dates.length - 1])}</span>
+		<span class="last-update">Maj : {new Date(lastUpdate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/Paris' })}</span>
 	</div>
 </div>
 
 <style>
 	.timeline {
 		background: var(--bg);
-		padding: 12px 20px;
+		padding: 10px 16px;
 	}
 
-	.timeline-header {
+	.row-top {
 		display: flex;
 		align-items: center;
-		gap: 12px;
-		margin-bottom: 8px;
+		gap: 10px;
+		margin-bottom: 6px;
+		flex-wrap: wrap;
+	}
+
+	.spacer {
+		flex: 1;
 	}
 
 	.play-btn {
-		width: 36px;
-		height: 36px;
+		width: 32px;
+		height: 32px;
 		border-radius: 50%;
 		border: 1px solid var(--border);
 		background: var(--bg);
 		color: var(--text);
-		font-size: 14px;
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		flex-shrink: 0;
 		transition: background 0.15s;
 	}
 
@@ -121,33 +123,17 @@
 		background: var(--surface);
 	}
 
-	.date-display {
-		display: flex;
-		flex-direction: column;
-	}
-
 	.current-date {
-		font-size: 18px;
+		font-size: 16px;
 		font-weight: 600;
 		letter-spacing: -0.3px;
+		white-space: nowrap;
 	}
 
 	.feature-count {
 		font-size: 12px;
 		color: var(--text-dim);
-	}
-
-	.header-right {
-		margin-left: auto;
-		display: flex;
-		align-items: center;
-		gap: 12px;
-	}
-
-	.last-update {
-		font-size: 10px;
-		color: var(--text-dim);
-		opacity: 0.7;
+		white-space: nowrap;
 	}
 
 	.mode-tabs {
@@ -155,6 +141,7 @@
 		border-radius: 4px;
 		overflow: hidden;
 		border: 1px solid var(--border);
+		flex-shrink: 0;
 	}
 
 	.mode-tab {
@@ -167,6 +154,7 @@
 		font-family: inherit;
 		font-weight: 500;
 		transition: background 0.15s, color 0.15s;
+		white-space: nowrap;
 	}
 
 	.mode-tab.active {
@@ -184,6 +172,7 @@
 		border: none;
 		background: transparent;
 		padding: 0;
+		flex-shrink: 0;
 	}
 
 	.annotation-toggle.disabled {
@@ -226,6 +215,7 @@
 
 	.toggle-label {
 		transition: color 0.15s;
+		white-space: nowrap;
 	}
 
 	.slider-row {
@@ -240,6 +230,14 @@
 		white-space: nowrap;
 	}
 
+	.last-update {
+		font-size: 10px;
+		color: var(--text-dim);
+		opacity: 0.7;
+		white-space: nowrap;
+		margin-left: auto;
+	}
+
 	.slider {
 		flex: 1;
 		-webkit-appearance: none;
@@ -249,6 +247,7 @@
 		border-radius: 2px;
 		outline: none;
 		cursor: pointer;
+		min-width: 0;
 	}
 
 	.slider::-webkit-slider-thumb {
@@ -264,22 +263,35 @@
 
 	@media (max-width: 640px) {
 		.timeline {
-			min-width: unset;
-			padding: 10px 12px;
+			padding: 8px 10px;
 		}
 
-		.timeline-header {
-			flex-wrap: wrap;
-			gap: 8px;
-		}
-
-		.header-right {
-			width: 100%;
-			margin-left: 0;
+		.row-top {
+			gap: 6px;
 		}
 
 		.current-date {
-			font-size: 15px;
+			font-size: 14px;
+		}
+
+		.feature-count {
+			font-size: 11px;
+		}
+
+		.spacer {
+			display: none;
+		}
+
+		.slider-row {
+			gap: 6px;
+		}
+
+		.date-label {
+			font-size: 10px;
+		}
+
+		.last-update {
+			display: none;
 		}
 	}
 </style>
