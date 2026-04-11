@@ -47,6 +47,12 @@
 		column-gap: 12px;
 	}
 
+	@media (max-width: 768px) {
+		.layers {
+			columns: 1;
+		}
+	}
+
 	.layer-row {
 		display: flex;
 		align-items: center;
@@ -61,6 +67,7 @@
 		text-align: left;
 		transition: opacity 0.15s;
 		line-height: 1.3;
+		break-inside: avoid;
 	}
 
 	.layer-row:hover {

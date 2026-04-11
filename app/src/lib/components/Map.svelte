@@ -430,7 +430,7 @@
 				layers: [{ id: 'carto-dark-mini', type: 'raster', source: 'carto-dark-mini' }]
 			},
 			center: [40, 30],
-			zoom: 0.5,
+			zoom: isMobile ? 0.2 : 0.5,
 			interactive: false,
 			attributionControl: false
 		});
