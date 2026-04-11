@@ -19,6 +19,7 @@
 	let playing = $state(false);
 	let visibleLayers = $state(new Set<string>());
 	let showAnnotations = $state(true);
+	let cumulative = $state(true);
 
 	let selectedDate = $derived((data as StrikeData | null)?.meta.dates[selectedIndex] ?? '');
 	let lastUpdate = $derived((data as StrikeData | null)?.meta.generated ?? '');
@@ -27,7 +28,8 @@
 		if (!data) return 0;
 		let count = 0;
 		for (const f of data.features) {
-			if (f.date <= selectedDate && visibleLayers.has(f.layer)) count++;
+			const match = cumulative ? f.date <= selectedDate : f.date === selectedDate;
+			if (match && visibleLayers.has(f.layer)) count++;
 		}
 		return count;
 	});
@@ -36,7 +38,8 @@
 		if (!data) return {};
 		const counts: Record<string, number> = {};
 		for (const f of data.features) {
-			if (f.date <= selectedDate) {
+			const match = cumulative ? f.date <= selectedDate : f.date === selectedDate;
+			if (match) {
 				counts[f.layer] = (counts[f.layer] || 0) + 1;
 			}
 		}
@@ -62,13 +65,14 @@
 			{countsByLayer}
 		/>
 		<div class="map-frame">
-			<Map {data} {selectedDate} {visibleLayers} {showAnnotations} />
+			<Map {data} {selectedDate} {visibleLayers} {showAnnotations} {cumulative} />
 		</div>
 		<Timeline
 			dates={data.meta.dates}
 			bind:selectedIndex
 			bind:playing
 			bind:showAnnotations
+			bind:cumulative
 			{featureCount}
 			{lastUpdate}
 		/>

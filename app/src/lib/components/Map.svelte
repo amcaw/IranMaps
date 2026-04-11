@@ -8,12 +8,14 @@
 		data,
 		selectedDate,
 		visibleLayers,
-		showAnnotations
+		showAnnotations,
+		cumulative
 	}: {
 		data: StrikeData;
 		selectedDate: string;
 		visibleLayers: Set<string>;
 		showAnnotations: boolean;
+		cumulative: boolean;
 	} = $props();
 
 	let mapContainer: HTMLDivElement;
@@ -57,7 +59,8 @@
 	function buildGeoJSON(date: string, visible: Set<string>): GeoJSON.FeatureCollection {
 		const features: GeoJSON.Feature[] = [];
 		for (const f of data.features) {
-			if (f.date > date || !visible.has(f.layer)) continue;
+			const match = cumulative ? f.date <= date : f.date === date;
+			if (!match || !visible.has(f.layer)) continue;
 			features.push({
 				type: 'Feature',
 				geometry: { type: 'Point', coordinates: [f.lon, f.lat] },
@@ -482,13 +485,14 @@
 	$effect(() => {
 		const date = selectedDate;
 		const layers = visibleLayers;
+		const _ = cumulative;
 		if (!map?.getSource('strikes')) return;
 		const geojson = buildGeoJSON(date, layers);
 		(map.getSource('strikes') as maplibregl.GeoJSONSource).setData(geojson);
 	});
 
 	$effect(() => {
-		const visible = showAnnotations;
+		const visible = showAnnotations && cumulative;
 		if (!map || !annotationLayerIds.length) return;
 		const visibility = visible ? 'visible' : 'none';
 		for (const id of annotationLayerIds) {

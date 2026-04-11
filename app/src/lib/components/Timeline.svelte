@@ -4,6 +4,7 @@
 		selectedIndex = $bindable(),
 		playing = $bindable(),
 		showAnnotations = $bindable(),
+		cumulative = $bindable(),
 		featureCount,
 		lastUpdate
 	}: {
@@ -11,6 +12,7 @@
 		selectedIndex: number;
 		playing: boolean;
 		showAnnotations: boolean;
+		cumulative: boolean;
 		featureCount: number;
 		lastUpdate: string;
 	} = $props();
@@ -61,8 +63,12 @@
 			<span class="feature-count">{featureCount.toLocaleString()} frappes</span>
 		</div>
 		<div class="header-right">
-			<button class="annotation-toggle" onclick={() => showAnnotations = !showAnnotations}>
-				<span class="toggle-switch" class:on={showAnnotations}>
+			<div class="mode-tabs">
+				<button class="mode-tab" class:active={cumulative} onclick={() => cumulative = true}>Cumulatif</button>
+				<button class="mode-tab" class:active={!cumulative} onclick={() => cumulative = false}>Jour par jour</button>
+			</div>
+			<button class="annotation-toggle" class:disabled={!cumulative} onclick={() => { if (cumulative) showAnnotations = !showAnnotations; }}>
+				<span class="toggle-switch" class:on={showAnnotations && cumulative}>
 					<span class="toggle-knob"></span>
 				</span>
 				<span class="toggle-label">Annotations</span>
@@ -144,6 +150,30 @@
 		opacity: 0.7;
 	}
 
+	.mode-tabs {
+		display: flex;
+		border-radius: 4px;
+		overflow: hidden;
+		border: 1px solid var(--border);
+	}
+
+	.mode-tab {
+		font-size: 11px;
+		padding: 4px 10px;
+		border: none;
+		background: transparent;
+		color: var(--text-dim);
+		cursor: pointer;
+		font-family: inherit;
+		font-weight: 500;
+		transition: background 0.15s, color 0.15s;
+	}
+
+	.mode-tab.active {
+		background: var(--surface);
+		color: var(--text);
+	}
+
 	.annotation-toggle {
 		display: flex;
 		align-items: center;
@@ -156,7 +186,12 @@
 		padding: 0;
 	}
 
-	.annotation-toggle:hover .toggle-label {
+	.annotation-toggle.disabled {
+		opacity: 0.35;
+		cursor: not-allowed;
+	}
+
+	.annotation-toggle:not(.disabled):hover .toggle-label {
 		color: var(--text);
 	}
 
