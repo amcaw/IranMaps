@@ -47,20 +47,27 @@
 <div class="timeline">
 	<div class="timeline-header">
 		<button class="play-btn" onclick={togglePlay} aria-label={playing ? 'Pause' : 'Play'}>
-			{playing ? '⏸' : '▶'}
+			<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+				{#if playing}
+					<rect x="5" y="3" width="5" height="18" rx="1" />
+					<rect x="14" y="3" width="5" height="18" rx="1" />
+				{:else}
+					<polygon points="6,3 20,12 6,21" />
+				{/if}
+			</svg>
 		</button>
 		<div class="date-display">
 			<span class="current-date">{formatDate(dates[selectedIndex])}</span>
 			<span class="feature-count">{featureCount.toLocaleString()} frappes</span>
-			<span class="last-update-row">
-				<span class="last-update">Dernière mise à jour : {new Date(lastUpdate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })}</span>
-				<button class="annotation-toggle" onclick={() => showAnnotations = !showAnnotations}>
-					<span class="toggle-switch" class:on={showAnnotations}>
-						<span class="toggle-knob"></span>
-					</span>
-					<span class="toggle-label">Annotations</span>
-				</button>
-			</span>
+		</div>
+		<div class="header-right">
+			<button class="annotation-toggle" onclick={() => showAnnotations = !showAnnotations}>
+				<span class="toggle-switch" class:on={showAnnotations}>
+					<span class="toggle-knob"></span>
+				</span>
+				<span class="toggle-label">Annotations</span>
+			</button>
+			<span class="last-update">Maj : {new Date(lastUpdate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/Paris' })}</span>
 		</div>
 	</div>
 	<div class="slider-row">
@@ -124,7 +131,8 @@
 		color: var(--text-dim);
 	}
 
-	.last-update-row {
+	.header-right {
+		margin-left: auto;
 		display: flex;
 		align-items: center;
 		gap: 12px;
@@ -222,9 +230,21 @@
 	@media (max-width: 640px) {
 		.timeline {
 			min-width: unset;
-			left: 12px;
-			right: 12px;
-			transform: none;
+			padding: 10px 12px;
+		}
+
+		.timeline-header {
+			flex-wrap: wrap;
+			gap: 8px;
+		}
+
+		.header-right {
+			width: 100%;
+			margin-left: 0;
+		}
+
+		.current-date {
+			font-size: 15px;
 		}
 	}
 </style>

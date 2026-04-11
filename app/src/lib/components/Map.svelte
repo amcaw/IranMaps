@@ -432,8 +432,8 @@
 				},
 				layers: [{ id: 'carto-mini', type: 'raster', source: 'carto-mini' }]
 			},
-			center: [40, 30],
-			zoom: isMobile ? 0.2 : 0.5,
+			center: [47, 30],
+			zoom: isMobile ? 0.3 : 0.5,
 			interactive: false,
 			attributionControl: false
 		});
