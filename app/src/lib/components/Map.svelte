@@ -492,9 +492,10 @@
 	});
 
 	$effect(() => {
-		const visible = showAnnotations && cumulative;
+		const _show = showAnnotations;
+		const _cum = cumulative;
 		if (!map || !annotationLayerIds.length) return;
-		const visibility = visible ? 'visible' : 'none';
+		const visibility = (_show && _cum) ? 'visible' : 'none';
 		for (const id of annotationLayerIds) {
 			if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visibility);
 		}
