@@ -5,8 +5,7 @@
 		playing = $bindable(),
 		showAnnotations = $bindable(),
 		cumulative = $bindable(),
-		featureCount,
-		lastUpdate
+		featureCount
 	}: {
 		dates: string[];
 		selectedIndex: number;
@@ -14,7 +13,6 @@
 		showAnnotations: boolean;
 		cumulative: boolean;
 		featureCount: number;
-		lastUpdate: string;
 	} = $props();
 
 	let interval: ReturnType<typeof setInterval> | null = null;
@@ -38,7 +36,7 @@
 
 	function formatDate(dateStr: string): string {
 		const d = new Date(dateStr + 'T12:00:00Z');
-		return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+		return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
 	}
 
 	$effect(() => {
@@ -47,7 +45,7 @@
 </script>
 
 <div class="timeline">
-	<div class="row-top">
+	<div class="row-controls">
 		<button class="play-btn" onclick={togglePlay} aria-label={playing ? 'Pause' : 'Play'}>
 			<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
 				{#if playing}
@@ -60,19 +58,20 @@
 		</button>
 		<span class="current-date">{formatDate(dates[selectedIndex])}</span>
 		<span class="feature-count">{featureCount.toLocaleString()} frappes</span>
-		<div class="spacer"></div>
-		<div class="mode-tabs">
-			<button class="mode-tab" class:active={cumulative} onclick={() => cumulative = true}>Cumulatif</button>
-			<button class="mode-tab" class:active={!cumulative} onclick={() => cumulative = false}>Jour par jour</button>
+		<div class="controls-right">
+			<div class="mode-tabs">
+				<button class="mode-tab" class:active={cumulative} onclick={() => cumulative = true}>Cumulatif</button>
+				<button class="mode-tab" class:active={!cumulative} onclick={() => cumulative = false}>Jour par jour</button>
+			</div>
+			<button class="annotation-toggle" class:disabled={!cumulative} onclick={() => { if (cumulative) showAnnotations = !showAnnotations; }}>
+				<span class="toggle-switch" class:on={showAnnotations && cumulative}>
+					<span class="toggle-knob"></span>
+				</span>
+				<span class="toggle-label">Annotations</span>
+			</button>
 		</div>
-		<button class="annotation-toggle" class:disabled={!cumulative} onclick={() => { if (cumulative) showAnnotations = !showAnnotations; }}>
-			<span class="toggle-switch" class:on={showAnnotations && cumulative}>
-				<span class="toggle-knob"></span>
-			</span>
-			<span class="toggle-label">Annotations</span>
-		</button>
 	</div>
-	<div class="slider-row">
+	<div class="row-slider">
 		<span class="date-label">{formatDate(dates[0])}</span>
 		<input
 			type="range"
@@ -82,7 +81,6 @@
 			class="slider"
 		/>
 		<span class="date-label">{formatDate(dates[dates.length - 1])}</span>
-		<span class="last-update">Maj : {new Date(lastUpdate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/Paris' })}</span>
 	</div>
 </div>
 
@@ -90,18 +88,15 @@
 	.timeline {
 		background: var(--bg);
 		padding: 10px 16px;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
 	}
 
-	.row-top {
+	.row-controls {
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		margin-bottom: 6px;
-		flex-wrap: wrap;
-	}
-
-	.spacer {
-		flex: 1;
 	}
 
 	.play-btn {
@@ -124,16 +119,28 @@
 	}
 
 	.current-date {
-		font-size: 16px;
+		font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+		font-size: 15px;
 		font-weight: 600;
 		letter-spacing: -0.3px;
 		white-space: nowrap;
+		font-variant-numeric: tabular-nums;
+		min-width: 7.5em;
 	}
 
 	.feature-count {
 		font-size: 12px;
 		color: var(--text-dim);
 		white-space: nowrap;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.controls-right {
+		margin-left: auto;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		flex-shrink: 0;
 	}
 
 	.mode-tabs {
@@ -141,7 +148,6 @@
 		border-radius: 4px;
 		overflow: hidden;
 		border: 1px solid var(--border);
-		flex-shrink: 0;
 	}
 
 	.mode-tab {
@@ -172,7 +178,6 @@
 		border: none;
 		background: transparent;
 		padding: 0;
-		flex-shrink: 0;
 	}
 
 	.annotation-toggle.disabled {
@@ -218,27 +223,21 @@
 		white-space: nowrap;
 	}
 
-	.slider-row {
+	.row-slider {
 		display: flex;
 		align-items: center;
 		gap: 8px;
 	}
 
 	.date-label {
+		font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 		font-size: 11px;
 		color: var(--text-dim);
 		white-space: nowrap;
+		font-variant-numeric: tabular-nums;
 	}
 
-	.last-update {
-		font-size: 10px;
-		color: var(--text-dim);
-		opacity: 0.7;
-		white-space: nowrap;
-		margin-left: auto;
-	}
-
-	.slider {
+.slider {
 		flex: 1;
 		-webkit-appearance: none;
 		appearance: none;
@@ -264,34 +263,35 @@
 	@media (max-width: 640px) {
 		.timeline {
 			padding: 8px 10px;
+			gap: 4px;
 		}
 
-		.row-top {
+		.row-controls {
 			gap: 6px;
+			flex-wrap: wrap;
 		}
 
 		.current-date {
-			font-size: 14px;
+			font-size: 13px;
+			min-width: 6.5em;
 		}
 
 		.feature-count {
 			font-size: 11px;
 		}
 
-		.spacer {
-			display: none;
+		.controls-right {
+			margin-left: 0;
+			width: 100%;
+			gap: 8px;
 		}
 
-		.slider-row {
+		.row-slider {
 			gap: 6px;
 		}
 
 		.date-label {
 			font-size: 10px;
-		}
-
-		.last-update {
-			display: none;
 		}
 	}
 </style>

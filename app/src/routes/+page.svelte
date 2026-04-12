@@ -74,9 +74,11 @@
 			bind:showAnnotations
 			bind:cumulative
 			{featureCount}
-			{lastUpdate}
 		/>
-		<div class="source-credit">Source : Institute for the Study of War and AEI's Critical Threats Project.</div>
+		<div class="source-credit">
+			<span>Source : Institute for the Study of War and AEI's Critical Threats Project.</span>
+			<span class="last-update">Maj : {new Date(lastUpdate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Europe/Paris' })}</span>
+		</div>
 	{:else}
 		<div class="loading">Chargement des données…</div>
 	{/if}
@@ -104,10 +106,19 @@
 	}
 
 	.source-credit {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
 		font-size: 11px;
 		color: var(--text-dim);
-		padding: 8px 16px;
+		padding: 6px 16px;
 		font-weight: 500;
+		font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+	}
+
+	.last-update {
+		font-variant-numeric: tabular-nums;
+		opacity: 0.7;
 	}
 
 	.loading {
