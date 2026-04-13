@@ -118,7 +118,7 @@
 	}
 
 	.crimea-label {
-		white-space: nowrap;
+		white-space: normal;
 	}
 
 	.loading {
