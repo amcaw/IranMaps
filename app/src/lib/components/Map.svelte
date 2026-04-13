@@ -364,10 +364,10 @@
 				const location = [props.city, props.province, props.country].filter(Boolean).join(', ');
 				if (location) html += `<div class="popup-city">${location}</div>`;
 				html += `<div class="popup-date">${dateStr}</div>`;
-				if (props.type) html += `<div class="popup-type">${t(props.type)}</div>`;
-				if (props.siteType && t(props.siteType)) html += `<div class="popup-detail">${t(props.siteType)}</div>`;
-				if (props.actor && props.actor !== 'UNK') html += `<div class="popup-detail">${props.actor}</div>`;
-				if (props.vessel) html += `<div class="popup-detail">${props.vessel}${props.flag ? ` (${props.flag})` : ''}</div>`;
+				if (props.type) html += `<div class="popup-type"><strong>Type :</strong> ${t(props.type)}</div>`;
+				if (props.siteType && t(props.siteType)) html += `<div class="popup-detail"><strong>Cible :</strong> ${t(props.siteType)}</div>`;
+				if (props.actor && props.actor !== 'UNK') html += `<div class="popup-detail"><strong>Acteur :</strong> ${props.actor}</div>`;
+				if (props.vessel) html += `<div class="popup-detail"><strong>Navire :</strong> ${props.vessel}${props.flag ? ` (${props.flag})` : ''}</div>`;
 				if (props.source) html += `<a class="popup-source" href="${props.source}" target="_blank" rel="noopener">Source <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`;
 
 				// Remove old popup without clearing highlight
@@ -409,7 +409,7 @@
 					'circle-radius': ['interpolate', ['linear'], ['zoom'], 3, 5, 8, 8, 14, 14],
 					'circle-color': 'transparent',
 					'circle-stroke-width': 2.5,
-					'circle-stroke-color': '#ffffff',
+					'circle-stroke-color': isDark ? '#ffffff' : '#000000',
 					'circle-stroke-opacity': 1
 				}
 			});

@@ -11,7 +11,7 @@
  */
 
 var REPO_OWNER = "amcaw";
-var REPO_NAME = "IranMaps";
+var REPO_NAME = "WarMaps";
 var BRANCH = "main";
 var GMAIL_QUERY = 'subject:"ISW" subject:"Iran Crisis Shapefiles" after:2026/03/01';
 var LABEL_NAME = "processed-iran-maps";
