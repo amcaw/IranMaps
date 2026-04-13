@@ -88,7 +88,7 @@
 					{
 						id: 'background',
 						type: 'background',
-						paint: { 'background-color': isDark ? '#0e0e0e' : '#F7F8FB' }
+						paint: { 'background-color': isDark ? '#0e0e0e' : '#FAFAF8' }
 					},
 					{
 						id: 'water',
@@ -96,7 +96,7 @@
 						source: 'carto',
 						'source-layer': 'water',
 						filter: ['==', '$type', 'Polygon'],
-						paint: { 'fill-color': isDark ? '#262626' : '#aad3df' }
+						paint: { 'fill-color': isDark ? '#262626' : '#D4DADC' }
 					},
 					{
 						id: 'boundary_state',
