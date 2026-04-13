@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { LayerMeta } from '$lib/types';
 	import { t } from '$lib/i18n';
 
 	let {
@@ -7,7 +6,7 @@
 		visibleLayers = $bindable(),
 		countsByLayer
 	}: {
-		layers: LayerMeta[];
+		layers: Array<{ id: string; label: string; color: string; count: number; areaKm2?: number }>;
 		visibleLayers: Set<string>;
 		countsByLayer: Record<string, number>;
 	} = $props();
@@ -30,7 +29,13 @@
 			>
 				<span class="dot" style="background: {layer.color}"></span>
 				<span class="layer-label">{t(layer.label)}</span>
-				<span class="layer-count">{(countsByLayer[layer.id] || 0).toLocaleString()}</span>
+				<span class="layer-count">
+				{#if layer.areaKm2 != null}
+					{layer.areaKm2.toLocaleString()} km²
+				{:else}
+					{(countsByLayer[layer.id] || 0).toLocaleString()}
+				{/if}
+			</span>
 			</button>
 		{/each}
 	</div>

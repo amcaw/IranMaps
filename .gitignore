@@ -1,9 +1,10 @@
 .DS_Store
 node_modules/
 
-# Only allow zips in data/zips/
+# Only allow zips in data region folders
 *.zip
-!data/zips/*.zip
+!data/middle-east/zips/*.zip
+!data/ukraine/zips/*.zip
 
 # App build output
 app/build/

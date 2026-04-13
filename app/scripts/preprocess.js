@@ -9,7 +9,7 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-const DATA_DIR = join(import.meta.dirname, '../../data/geojson');
+const DATA_DIR = join(import.meta.dirname, '../../data/middle-east/geojson');
 const OUT_DIR = join(import.meta.dirname, '../static/data');
 
 const LAYERS = [

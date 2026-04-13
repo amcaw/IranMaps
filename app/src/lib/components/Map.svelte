@@ -281,6 +281,7 @@
 		);
 
 		map.addControl(new maplibregl.NavigationControl(), 'top-right');
+		map.addControl(new maplibregl.ScaleControl({ maxWidth: 150, unit: 'metric' }), 'bottom-right');
 
 		map.on('load', () => {
 			// Country labels

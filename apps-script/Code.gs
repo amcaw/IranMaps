@@ -1,9 +1,10 @@
 /**
- * Gmail → GitHub automation for ISW-CTP Iran Crisis Shapefiles.
+ * Gmail → GitHub automation for ISW-CTP Shapefiles.
+ * Handles both Middle East (Iran Crisis) and Ukraine data.
  *
  * Finds the LATEST email only (data is cumulative), extracts zip
- * attachments, and pushes them to data/zips/ on GitHub, overwriting
- * previous versions. A GitHub Action then converts to GeoJSON.
+ * attachments, and pushes them to data/{region}/zips/ on GitHub.
+ * A GitHub Action then converts to GeoJSON.
  *
  * Setup:
  *   1. Script Properties → GITHUB_TOKEN = your fine-grained PAT
@@ -13,28 +14,46 @@
 var REPO_OWNER = "amcaw";
 var REPO_NAME = "WarMaps";
 var BRANCH = "main";
-var GMAIL_QUERY = 'subject:"ISW" subject:"Iran Crisis Shapefiles" after:2026/03/01';
-var LABEL_NAME = "processed-iran-maps";
 
-// Normalize attachment names to stable filenames
-var LAYER_MAP = {
-  "us and israeli strikes in iran": "us_israeli_strikes_iran",
-  "iran and axis response": "iran_axis_response",
-  "israeli strikes in lebanon": "israeli_strikes_lebanon",
-  "us and israeli strikes in iraq": "us_israeli_strikes_iraq",
-  "iran strikes against civilian vessels": "iran_civilian_vessels",
-  "hezbollah attacks in lebanon": "hezbollah_lebanon"
+// ── Region configurations ──────────────────────────────────────────
+
+var REGIONS = {
+  "middle-east": {
+    query: 'subject:"ISW" subject:"Iran Crisis Shapefiles" after:2026/03/01',
+    label: "processed-iran-maps",
+    dataPath: "data/middle-east/zips/",
+    layerMap: {
+      "us and israeli strikes in iran": "us_israeli_strikes_iran",
+      "iran and axis response": "iran_axis_response",
+      "israeli strikes in lebanon": "israeli_strikes_lebanon",
+      "us and israeli strikes in iraq": "us_israeli_strikes_iraq",
+      "iran strikes against civilian vessels": "iran_civilian_vessels",
+      "hezbollah attacks in lebanon": "hezbollah_lebanon"
+    }
+  },
+  "ukraine": {
+    query: 'subject:"ISW" subject:"Shapefiles" subject:"Ukraine" after:2026/03/01',
+    label: "processed-ukraine-maps",
+    dataPath: "data/ukraine/zips/",
+    layerMap: {
+      "ukrainecontrolmap": "ukraine_control_map",
+      "assessedrussianadvances": "russian_advances",
+      "assessedrussianinfiltration": "russian_infiltration",
+      "claimedrussianterritory": "claimed_russian_territory",
+      "claimedukrainiancounteroffensives": "ukrainian_counteroffensives"
+    }
+  }
 };
 
-function normalizeFilename(attName) {
-  var lower = attName.toLowerCase();
-  for (var key in LAYER_MAP) {
+function normalizeFilename(attName, layerMap) {
+  var lower = attName.toLowerCase().replace(/[^a-z]/g, '');
+  for (var key in layerMap) {
     if (lower.indexOf(key) !== -1) {
-      return LAYER_MAP[key] + ".zip";
+      return layerMap[key] + ".zip";
     }
   }
   // Fallback: sanitize the original name
-  return lower.replace(/[^a-z0-9.]/g, '_').replace(/_+/g, '_');
+  return attName.toLowerCase().replace(/[^a-z0-9.]/g, '_').replace(/_+/g, '_');
 }
 
 // ── Entry point (called by daily trigger) ──────────────────────────
@@ -43,28 +62,31 @@ function processNewEmails() {
   var token = PropertiesService.getScriptProperties().getProperty("GITHUB_TOKEN");
   if (!token) throw new Error("GITHUB_TOKEN not set in Script Properties");
 
-  var label = getOrCreateLabel(LABEL_NAME);
+  for (var regionName in REGIONS) {
+    processRegion(regionName, REGIONS[regionName], token);
+  }
+}
 
-  // Find unprocessed threads
-  var threads = GmailApp.search(GMAIL_QUERY + ' -label:' + LABEL_NAME, 0, 50);
+function processRegion(regionName, config, token) {
+  var label = getOrCreateLabel(config.label);
+
+  var threads = GmailApp.search(config.query + ' -label:' + config.label, 0, 50);
   if (threads.length === 0) {
-    Logger.log("No new emails to process");
+    Logger.log("[" + regionName + "] No new emails");
     return;
   }
 
-  Logger.log("Found " + threads.length + " unprocessed thread(s)");
+  Logger.log("[" + regionName + "] Found " + threads.length + " unprocessed thread(s)");
 
-  // Sort threads by date descending, process only the latest
   threads.sort(function(a, b) {
     return b.getLastMessageDate().getTime() - a.getLastMessageDate().getTime();
   });
 
-  // Process only the latest thread's latest message
   var latestThread = threads[0];
   var messages = latestThread.getMessages();
   var latestMsg = messages[messages.length - 1];
 
-  Logger.log("Processing latest: " + latestMsg.getSubject());
+  Logger.log("[" + regionName + "] Processing: " + latestMsg.getSubject());
 
   var attachments = latestMsg.getAttachments();
   var filesToCommit = [];
@@ -74,9 +96,8 @@ function processNewEmails() {
     if (!att.getName().toLowerCase().endsWith(".zip")) continue;
 
     var blob = att.copyBlob();
-    var stableName = normalizeFilename(att.getName());
+    var stableName = normalizeFilename(att.getName(), config.layerMap);
 
-    // Check if outer zip (contains inner zips) or direct shapefile zip
     try {
       var innerFiles = Utilities.unzip(blob);
       var hasInnerZips = false;
@@ -90,23 +111,23 @@ function processNewEmails() {
       if (hasInnerZips) {
         for (var i = 0; i < innerFiles.length; i++) {
           if (!innerFiles[i].getName().toLowerCase().endsWith(".zip")) continue;
-          var innerName = normalizeFilename(innerFiles[i].getName());
+          var innerName = normalizeFilename(innerFiles[i].getName(), config.layerMap);
           filesToCommit.push({
-            path: "data/zips/" + innerName,
+            path: config.dataPath + innerName,
             content: Utilities.base64Encode(innerFiles[i].getBytes())
           });
           Logger.log("  Queued: " + innerName);
         }
       } else {
         filesToCommit.push({
-          path: "data/zips/" + stableName,
+          path: config.dataPath + stableName,
           content: Utilities.base64Encode(blob.getBytes())
         });
         Logger.log("  Queued: " + stableName);
       }
     } catch (e) {
       filesToCommit.push({
-        path: "data/zips/" + stableName,
+        path: config.dataPath + stableName,
         content: Utilities.base64Encode(blob.getBytes())
       });
       Logger.log("  Queued (raw): " + stableName);
@@ -124,14 +145,13 @@ function processNewEmails() {
   }
 
   if (uniqueFiles.length > 0) {
-    commitFilesToGitHub(uniqueFiles, "Update shapefiles", token);
+    commitFilesToGitHub(uniqueFiles, "Update " + regionName + " shapefiles", token);
   }
 
-  // Label ALL unprocessed threads (not just latest)
   for (var t = 0; t < threads.length; t++) {
     threads[t].addLabel(label);
   }
-  Logger.log("Labeled " + threads.length + " thread(s) as processed");
+  Logger.log("[" + regionName + "] Labeled " + threads.length + " thread(s) as processed");
 }
 
 // ── Commit files to GitHub (overwrites existing) ───────────────────
@@ -215,16 +235,19 @@ function getOrCreateLabel(name) {
   return label;
 }
 
-// ── Reset: remove processed label (run once to reprocess) ──────────
+// ── Reset: remove processed labels (run once to reprocess) ─────────
 
 function resetProcessedLabel() {
-  var label = GmailApp.getUserLabelByName(LABEL_NAME);
-  if (!label) { Logger.log("Label not found"); return; }
-  var threads = label.getThreads();
-  for (var i = 0; i < threads.length; i++) {
-    threads[i].removeLabel(label);
+  var labels = [REGIONS["middle-east"].label, REGIONS["ukraine"].label];
+  for (var l = 0; l < labels.length; l++) {
+    var label = GmailApp.getUserLabelByName(labels[l]);
+    if (!label) continue;
+    var threads = label.getThreads();
+    for (var i = 0; i < threads.length; i++) {
+      threads[i].removeLabel(label);
+    }
+    Logger.log("Removed " + labels[l] + " from " + threads.length + " thread(s)");
   }
-  Logger.log("Removed label from " + threads.length + " thread(s)");
 }
 
 // ── Trigger setup (run once manually) ──────────────────────────────

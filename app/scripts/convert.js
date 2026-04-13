@@ -1,29 +1,37 @@
 /**
- * Converts shapefile zips in data/zips/ to GeoJSON in data/geojson/
- * Uses shpjs (pure JS) — no GDAL needed.
+ * Converts shapefile zips to GeoJSON.
+ * Handles both middle-east and ukraine data directories.
  */
 
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync } from 'fs';
 import { join, basename } from 'path';
 import shp from 'shpjs';
 
-const ZIPS_DIR = join(import.meta.dirname, '../../data/zips');
-const GEOJSON_DIR = join(import.meta.dirname, '../../data/geojson');
+const REGIONS = ['middle-east', 'ukraine'];
+const DATA_ROOT = join(import.meta.dirname, '../../data');
 
-if (!existsSync(GEOJSON_DIR)) mkdirSync(GEOJSON_DIR, { recursive: true });
+for (const region of REGIONS) {
+  const zipsDir = join(DATA_ROOT, region, 'zips');
+  const geojsonDir = join(DATA_ROOT, region, 'geojson');
 
-const zipFiles = readdirSync(ZIPS_DIR).filter(f => f.endsWith('.zip'));
+  if (!existsSync(zipsDir)) continue;
+  if (!existsSync(geojsonDir)) mkdirSync(geojsonDir, { recursive: true });
 
-for (const zipFile of zipFiles) {
-  const name = basename(zipFile, '.zip');
-  const outPath = join(GEOJSON_DIR, `${name}.geojson`);
+  const zipFiles = readdirSync(zipsDir).filter(f => f.endsWith('.zip'));
+  if (zipFiles.length === 0) continue;
 
-  const buffer = readFileSync(join(ZIPS_DIR, zipFile));
-  const geojson = await shp(buffer);
+  console.log(`\n[${region}] Converting ${zipFiles.length} shapefiles...`);
 
-  // shpjs can return an array if multiple layers; take first
-  const fc = Array.isArray(geojson) ? geojson[0] : geojson;
+  for (const zipFile of zipFiles) {
+    const name = basename(zipFile, '.zip');
+    const outPath = join(geojsonDir, `${name}.geojson`);
 
-  writeFileSync(outPath, JSON.stringify(fc));
-  console.log(`Converted: ${name}.geojson (${fc.features.length} features)`);
+    const buffer = readFileSync(join(zipsDir, zipFile));
+    const geojson = await shp(buffer);
+
+    const fc = Array.isArray(geojson) ? geojson[0] : geojson;
+
+    writeFileSync(outPath, JSON.stringify(fc));
+    console.log(`  Converted: ${name}.geojson (${fc.features.length} features)`);
+  }
 }

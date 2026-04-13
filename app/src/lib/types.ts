@@ -29,3 +29,26 @@ export interface StrikeData {
 	};
 	features: StrikeFeature[];
 }
+
+export interface UkraineLayerMeta {
+	id: string;
+	label: string;
+	color: string;
+	fillColor: string;
+	fillOpacity: number;
+	count: number;
+	areaKm2: number;
+}
+
+export interface UkraineData {
+	meta: {
+		layers: UkraineLayerMeta[];
+		generated: string;
+	};
+	type: 'FeatureCollection';
+	features: Array<{
+		type: 'Feature';
+		geometry: { type: string; coordinates: any };
+		properties: { layer: string };
+	}>;
+}
