@@ -17,7 +17,7 @@
 	let miniMap: maplibregl.Map | null = null;
 	const isDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-	const BBOX: [[number, number], [number, number]] = [[19.81, 43.88], [42.29, 52.95]];
+	const BBOX: [[number, number], [number, number]] = [[19.0, 43.0], [43.0, 53.5]];
 
 	// Geographic hatch lines for Crimea
 	function generateHatchLines(polygon: number[][], spacing: number): any {
@@ -68,23 +68,59 @@
 	}
 
 	onMount(() => {
-		const tileVariant = isDark ? 'dark_nolabels' : 'light_nolabels';
-		const isMobile = window.innerWidth <= 768;
-
 		map = new maplibregl.Map({
 			container: mapContainer,
 			style: {
 				version: 8,
-				sources: { 'carto-basemap': { type: 'raster', tiles: [`https://a.basemaps.cartocdn.com/${tileVariant}/{z}/{x}/{y}@2x.png`, `https://b.basemaps.cartocdn.com/${tileVariant}/{z}/{x}/{y}@2x.png`], tileSize: 256, attribution: '&copy; <a href="https://carto.com/">CARTO</a>' } },
-				layers: [{ id: 'carto-basemap', type: 'raster', source: 'carto-basemap' }]
+				glyphs: 'https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
+				sources: {
+					'carto': {
+						type: 'vector',
+						tiles: [
+							'https://tiles-a.basemaps.cartocdn.com/vectortiles/carto.streets/v1/{z}/{x}/{y}.mvt',
+							'https://tiles-b.basemaps.cartocdn.com/vectortiles/carto.streets/v1/{z}/{x}/{y}.mvt',
+						],
+						minzoom: 0,
+						maxzoom: 14
+					}
+				},
+				layers: [
+					{
+						id: 'background',
+						type: 'background',
+						paint: { 'background-color': isDark ? '#0e0e0e' : '#F7F8FB' }
+					},
+					{
+						id: 'water',
+						type: 'fill',
+						source: 'carto',
+						'source-layer': 'water',
+						filter: ['==', '$type', 'Polygon'],
+						paint: { 'fill-color': isDark ? '#262626' : '#aad3df' }
+					},
+					{
+						id: 'boundary_state',
+						type: 'line',
+						source: 'carto',
+						'source-layer': 'boundary',
+						filter: ['==', 'admin_level', 2],
+						layout: { 'line-cap': 'round', 'line-join': 'round' },
+						paint: {
+							'line-blur': 0.4,
+							'line-color': isDark ? 'hsl(0, 0%, 21%)' : 'hsl(0, 0%, 65%)',
+								'line-opacity': 1,
+							'line-width': ['interpolate', ['exponential', 1.3], ['zoom'], 3, 1, 22, 15]
+						}
+					}
+				]
 			},
-			maxBounds: [[BBOX[0][0] - 5, BBOX[0][1] - 5], [BBOX[1][0] + 5, BBOX[1][1] + 5]],
+			maxBounds: [[BBOX[0][0] - 3, BBOX[0][1] - 3], [BBOX[1][0] + 3, BBOX[1][1] + 3]],
 			maxZoom: 14,
 			minZoom: 3,
 			cooperativeGestures: true
 		});
 
-		map.fitBounds(BBOX, { padding: isMobile ? 10 : 40 });
+		map.fitBounds(BBOX);
 		map.addControl(new maplibregl.NavigationControl(), 'top-right');
 		map.addControl(new maplibregl.ScaleControl({ maxWidth: 150, unit: 'metric' }), 'bottom-right');
 
@@ -95,10 +131,28 @@
 				const sourceId = `ukraine-${layerDef.id}`;
 				map!.addSource(sourceId, { type: 'geojson', data: { type: 'FeatureCollection', features } as any });
 				map!.addLayer({ id: `${sourceId}-fill`, type: 'fill', source: sourceId, paint: { 'fill-color': layerDef.fillColor, 'fill-opacity': layerDef.fillOpacity } });
-				map!.addLayer({ id: `${sourceId}-line`, type: 'line', source: sourceId, paint: { 'line-color': layerDef.color, 'line-width': 1.5, 'line-opacity': 0.8 } });
 			}
 
-			// Crimea hatched overlay
+			// Ukraine oblasts (internal borders)
+				fetch(`${import.meta.env.BASE_URL}data/ukraine-oblasts.json`)
+					.then(r => r.json())
+					.then(oblasts => {
+						if (!map) return;
+						map.addSource('ukraine-oblasts', { type: 'geojson', data: oblasts });
+						map.addLayer({
+							id: 'ukraine-oblasts-line',
+							type: 'line',
+							source: 'ukraine-oblasts',
+							paint: {
+								'line-color': isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)',
+								'line-width': 0.8,
+								'line-dasharray': [4, 3]
+							}
+						});
+						})
+					.catch(() => {});
+
+				// Crimea hatched overlay
 			fetch(`${import.meta.env.BASE_URL}data/crimea.json`)
 				.then(r => r.json())
 				.then(crimea => {
@@ -131,12 +185,20 @@
 				layout: { 'text-field': ['get', 'name'], 'text-size': ['interpolate', ['linear'], ['zoom'], 3, 10, 6, 14, 10, 18], 'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'], 'text-transform': 'uppercase', 'text-letter-spacing': 0.15, 'text-allow-overlap': false },
 				paint: { 'text-color': isDark ? '#777' : '#999', 'text-halo-color': isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)', 'text-halo-width': 1.5 }
 			});
+
+			// Kyiv marker
+			const kyivEl = document.createElement('div');
+			kyivEl.className = 'kyiv-marker';
+			kyivEl.innerHTML = '<span class="kyiv-square"></span><span class="kyiv-label">Kyiv</span>';
+			new maplibregl.Marker({ element: kyivEl, anchor: 'left' })
+				.setLngLat([30.523333, 50.450001])
+				.addTo(map!);
 		});
 
 		// Mini map
 		miniMap = new maplibregl.Map({
 			container: miniMapContainer,
-			style: { version: 8, sources: { 'carto-mini': { type: 'raster', tiles: [`https://a.basemaps.cartocdn.com/${tileVariant}/{z}/{x}/{y}.png`], tileSize: 256 } }, layers: [{ id: 'carto-mini', type: 'raster', source: 'carto-mini' }] },
+			style: { version: 8, sources: { 'carto-mini': { type: 'raster', tiles: [`https://a.basemaps.cartocdn.com/${isDark ? 'dark_nolabels' : 'light_nolabels'}/{z}/{x}/{y}.png`], tileSize: 256 } }, layers: [{ id: 'carto-mini', type: 'raster', source: 'carto-mini' }] },
 			center: [31, 49], zoom: 0, interactive: false, attributionControl: false
 		});
 
@@ -158,7 +220,6 @@
 			const sourceId = `ukraine-${layerDef.id}`;
 			const visibility = visible.has(layerDef.id) ? 'visible' : 'none';
 			if (map.getLayer(`${sourceId}-fill`)) map.setLayoutProperty(`${sourceId}-fill`, 'visibility', visibility);
-			if (map.getLayer(`${sourceId}-line`)) map.setLayoutProperty(`${sourceId}-line`, 'visibility', visibility);
 		}
 	});
 </script>
@@ -174,4 +235,30 @@
 	@media (max-width: 768px) { .minimap-wrapper { width: 90px; height: 90px; bottom: 6px; left: 10px; } }
 	.minimap { width: 100%; height: 100%; }
 	:global(.minimap-wrapper .maplibregl-canvas) { border-radius: 50%; }
+
+	:global(.kyiv-marker) {
+		display: flex;
+		align-items: center;
+		gap: 5px;
+		pointer-events: none;
+		z-index: 5;
+		margin-left: -3.5px;
+		margin-top: -3.5px;
+	}
+
+	:global(.kyiv-square) {
+		width: 7px;
+		height: 7px;
+		background: var(--text);
+		flex-shrink: 0;
+	}
+
+	:global(.kyiv-label) {
+		font-family: 'Montserrat', sans-serif;
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--text);
+		white-space: nowrap;
+		text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+	}
 </style>
