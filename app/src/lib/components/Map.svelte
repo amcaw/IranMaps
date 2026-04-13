@@ -282,6 +282,10 @@
 		);
 
 		map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+			// Expand compact attribution by default
+			const attribBtn = mapContainer.querySelector('.maplibregl-ctrl-attrib-button');
+			if (attribBtn) (attribBtn as HTMLElement).click();
 		map.addControl(new maplibregl.ScaleControl({ maxWidth: 150, unit: 'metric' }), 'bottom-right');
 
 		map.on('load', () => {

@@ -124,6 +124,10 @@
 		map.addControl(new maplibregl.NavigationControl(), 'top-right');
 		map.addControl(new maplibregl.ScaleControl({ maxWidth: 150, unit: 'metric' }), 'bottom-right');
 
+			// Expand compact attribution by default
+			const attribBtn = mapContainer.querySelector('.maplibregl-ctrl-attrib-button');
+			if (attribBtn) (attribBtn as HTMLElement).click();
+
 		map.on('load', () => {
 			// Data layers
 			for (const layerDef of data.meta.layers) {
