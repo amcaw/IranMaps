@@ -20,11 +20,15 @@ const LAYERS = [
 function reprojectCoord(x, y) {
   const lon = (x * 180) / 20037508.34;
   const lat = (Math.atan(Math.exp((y * Math.PI) / 20037508.34)) * 360) / Math.PI - 90;
-  return [Math.round(lon * 1e6) / 1e6, Math.round(lat * 1e6) / 1e6];
+  return [Math.round(lon * 1e5) / 1e5, Math.round(lat * 1e5) / 1e5];
 }
 
 function isWebMercator(coord) {
   return Math.abs(coord[0]) > 180 || Math.abs(coord[1]) > 90;
+}
+
+function roundCoord(c) {
+  return [Math.round(c[0] * 1e5) / 1e5, Math.round(c[1] * 1e5) / 1e5];
 }
 
 function reprojectRing(ring) {
@@ -32,7 +36,7 @@ function reprojectRing(ring) {
   if (isWebMercator(ring[0])) {
     return ring.map(c => reprojectCoord(c[0], c[1]));
   }
-  return ring;
+  return ring.map(roundCoord);
 }
 
 function reprojectGeometry(geometry) {

@@ -31,17 +31,9 @@ jobs:
         working-directory: app
         run: npm ci
 
-      - name: Convert shapefiles to GeoJSON
+      - name: Convert shapefiles and preprocess data
         working-directory: app
-        run: node scripts/convert.js
-
-      - name: Build strikes.json (Middle East)
-        working-directory: app
-        run: node scripts/preprocess.js
-
-      - name: Build ukraine.json
-        working-directory: app
-        run: node scripts/preprocess-ukraine.js
+        run: npm run data
 
       - name: Commit all changes
         run: |

@@ -148,6 +148,10 @@ function processRegion(regionName, config, token) {
     commitFilesToGitHub(uniqueFiles, "Update " + regionName + " shapefiles", token);
   }
 
+  // Label threads only after successful commit (data is cumulative,
+  // so the latest supersedes all older ones — safe to mark all as done).
+  // If commitFilesToGitHub throws, we never reach here and threads
+  // will be reprocessed on the next run.
   for (var t = 0; t < threads.length; t++) {
     threads[t].addLabel(label);
   }

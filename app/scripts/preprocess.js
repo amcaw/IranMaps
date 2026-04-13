@@ -34,12 +34,11 @@ function isWebMercator(coords) {
 function extractDate(props) {
   const raw = props.strikedate || props.AssessedDa || props.event_date || props.date || props.Date || props.post_date || props.Post_Date || null;
   if (!raw) return null;
-  // Normalize ISO timestamps (from shpjs) to YYYY-MM-DD
-  // shpjs shifts dates by timezone offset, so add 12h to snap to correct day
-  if (typeof raw === 'string' && raw.includes('T')) {
-    const d = new Date(raw);
-    d.setUTCHours(d.getUTCHours() + 12);
-    return d.toISOString().slice(0, 10);
+  if (typeof raw === 'string') {
+    // Extract YYYY-MM-DD directly from ISO string (e.g. "2026-04-12T00:00:00.000Z")
+    // This avoids timezone parsing issues from shpjs date handling
+    const match = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
   }
   return raw;
 }
