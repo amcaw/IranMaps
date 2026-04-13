@@ -87,11 +87,9 @@ export const fr: Record<string, string> = {
   'Loading strike data...': 'Chargement des données…',
 
   // Ukraine layers
-  'Ukraine Control Map': 'Carte de contrôle de l\'Ukraine',
-  'Assessed Russian Advances': 'Avancées russes évaluées',
-  'Assessed Russian Infiltration Areas': 'Zones d\'infiltration russes évaluées',
-  'Claimed Russian Territory': 'Territoire revendiqué par la Russie',
-  'Claimed Ukrainian Counteroffensives': 'Contre-offensives ukrainiennes revendiquées',
+  'Ukraine Control Map': 'Territoire occupé par la Russie',
+  'Assessed Russian Advances': 'Zones de combats',
+  'Claimed Ukrainian Counteroffensives': 'Contre-offensives ukrainiennes',
 };
 
 export function t(key: string): string {

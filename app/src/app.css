@@ -50,6 +50,18 @@ body.is-mac .maplibregl-cooperative-gesture-screen .maplibregl-desktop-message::
 }
 
 
+/* Scale control styling */
+.maplibregl-ctrl-scale {
+	background: transparent !important;
+	border: none !important;
+	border-bottom: 2px solid var(--text-dim) !important;
+	color: var(--text-dim) !important;
+	font-size: 10px !important;
+	font-family: 'Montserrat', sans-serif !important;
+	padding: 0 4px 2px !important;
+	line-height: 1 !important;
+}
+
 html, body {
 	width: 100%;
 	margin: 0;

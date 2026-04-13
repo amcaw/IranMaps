@@ -12,10 +12,8 @@ const DATA_DIR = join(import.meta.dirname, '../../data/ukraine/geojson');
 const OUT_DIR = join(import.meta.dirname, '../static/data');
 
 const LAYERS = [
-  { file: 'ukraine_control_map.geojson', id: 'control_map', label: 'Ukraine Control Map', color: '#2563eb', fillColor: '#2563eb', fillOpacity: 0.15 },
+  { file: 'ukraine_control_map.geojson', id: 'control_map', label: 'Ukraine Control Map', color: '#b91c1c', fillColor: '#b91c1c', fillOpacity: 0.15 },
   { file: 'russian_advances.geojson', id: 'russian_advances', label: 'Assessed Russian Advances', color: '#dc2626', fillColor: '#dc2626', fillOpacity: 0.3 },
-  { file: 'russian_infiltration.geojson', id: 'russian_infiltration', label: 'Assessed Russian Infiltration Areas', color: '#f97316', fillColor: '#f97316', fillOpacity: 0.2 },
-  { file: 'claimed_russian_territory.geojson', id: 'claimed_territory', label: 'Claimed Russian Territory', color: '#991b1b', fillColor: '#991b1b', fillOpacity: 0.1 },
   { file: 'ukrainian_counteroffensives.geojson', id: 'counteroffensives', label: 'Claimed Ukrainian Counteroffensives', color: '#facc15', fillColor: '#facc15', fillOpacity: 0.25 },
 ];
 

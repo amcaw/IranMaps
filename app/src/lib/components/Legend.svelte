@@ -1,14 +1,17 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
+	import type { Snippet } from 'svelte';
 
 	let {
 		layers,
 		visibleLayers = $bindable(),
-		countsByLayer
+		countsByLayer,
+		extra
 	}: {
 		layers: Array<{ id: string; label: string; color: string; count: number; areaKm2?: number }>;
 		visibleLayers: Set<string>;
 		countsByLayer: Record<string, number>;
+		extra?: Snippet;
 	} = $props();
 
 	function toggle(id: string) {
@@ -38,6 +41,9 @@
 			</span>
 			</button>
 		{/each}
+		{#if extra}
+			{@render extra()}
+		{/if}
 	</div>
 </div>
 

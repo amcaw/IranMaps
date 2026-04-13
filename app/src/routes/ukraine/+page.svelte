@@ -21,9 +21,7 @@
 		const counts: Record<string, number> = {};
 		for (const f of data.features) {
 			const id = f.properties.layer;
-			if (visibleLayers.has(id)) {
-				counts[id] = (counts[id] || 0) + 1;
-			}
+			if (visibleLayers.has(id)) counts[id] = (counts[id] || 0) + 1;
 		}
 		return counts;
 	});
@@ -44,7 +42,14 @@
 			layers={data.meta.layers}
 			bind:visibleLayers
 			{countsByLayer}
-		/>
+		>
+			{#snippet extra()}
+				<span class="crimea-row">
+					<span class="hatch-dot"></span>
+					<span class="crimea-label">Crimée annexée en 2014</span>
+				</span>
+			{/snippet}
+		</Legend>
 		<div class="map-frame">
 			<UkraineMap {data} {visibleLayers} />
 		</div>
@@ -91,6 +96,29 @@
 	.last-update {
 		font-variant-numeric: tabular-nums;
 		opacity: 0.7;
+	}
+
+	.crimea-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 4px 6px;
+		font-size: 12px;
+		color: var(--text);
+		line-height: 1.3;
+	}
+
+	.hatch-dot {
+		width: 12px;
+		height: 8px;
+		flex-shrink: 0;
+		border-radius: 2px;
+		background: repeating-linear-gradient(135deg, transparent, transparent 2px, rgba(153, 27, 27, 0.6) 2px, rgba(153, 27, 27, 0.6) 3px);
+		border: 1px solid #991b1b;
+	}
+
+	.crimea-label {
+		white-space: nowrap;
 	}
 
 	.loading {
