@@ -47,12 +47,12 @@
 		background: var(--surface);
 		text-decoration: none;
 		color: var(--text);
-		transition: background 0.15s, transform 0.15s;
-		min-width: 240px;
+		transition: border-color 0.15s;
+		min-width: 280px;
+		width: 280px;
 	}
 
 	.map-card:hover {
-		transform: translateY(-2px);
 		border-color: var(--accent);
 	}
 

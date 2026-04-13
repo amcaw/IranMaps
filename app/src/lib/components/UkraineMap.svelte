@@ -192,8 +192,8 @@
 				type: 'geojson',
 				data: { type: 'FeatureCollection', features: [
 					{ type: 'Feature', geometry: { type: 'Point', coordinates: [32.0, 49.0] }, properties: { name: 'UKRAINE' } },
-					{ type: 'Feature', geometry: { type: 'Point', coordinates: [38.0, 52.5] }, properties: { name: 'RUSSIE' } },
-					{ type: 'Feature', geometry: { type: 'Point', coordinates: [27.9, 53.7] }, properties: { name: 'BIELORUSSIE' } },
+					{ type: 'Feature', geometry: { type: 'Point', coordinates: [38.0, 51.0] }, properties: { name: 'RUSSIE' } },
+					{ type: 'Feature', geometry: { type: 'Point', coordinates: [27.52, 52.11] }, properties: { name: 'BIÉLORUSSIE' } },
 					{ type: 'Feature', geometry: { type: 'Point', coordinates: [19.4, 51.9] }, properties: { name: 'POLOGNE' } },
 					{ type: 'Feature', geometry: { type: 'Point', coordinates: [25.0, 45.9] }, properties: { name: 'ROUMANIE' } },
 					{ type: 'Feature', geometry: { type: 'Point', coordinates: [19.7, 48.7] }, properties: { name: 'SLOVAQUIE' } },
