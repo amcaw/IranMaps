@@ -167,6 +167,26 @@
 				})
 				.catch(() => {});
 
+			// Pre-2022 Russian-controlled Donbas (DPR/LPR) hatched overlay
+			fetch(`${import.meta.env.BASE_URL}data/pre2022_russian_control.json`)
+				.then(r => r.json())
+				.then(pre2022 => {
+					if (!map) return;
+					const allHatch: any = { type: 'FeatureCollection', features: [] };
+					const coords = pre2022.geometry.type === 'MultiPolygon' ? pre2022.geometry.coordinates : [pre2022.geometry.coordinates];
+					for (const poly of coords) {
+						const ring = poly[0];
+						const hatch = generateHatchLines(ring, 0.12);
+						allHatch.features.push(...hatch.features);
+					}
+					map.addSource('pre2022', { type: 'geojson', data: pre2022 });
+					map.addLayer({ id: 'pre2022-fill', type: 'fill', source: 'pre2022', paint: { 'fill-color': '#991b1b', 'fill-opacity': 0.05 } });
+					map.addLayer({ id: 'pre2022-line', type: 'line', source: 'pre2022', paint: { 'line-color': '#991b1b', 'line-width': 1.5, 'line-opacity': 0.4 } });
+					map.addSource('pre2022-hatch', { type: 'geojson', data: allHatch });
+					map.addLayer({ id: 'pre2022-hatch-lines', type: 'line', source: 'pre2022-hatch', paint: { 'line-color': isDark ? '#dc2626' : '#991b1b', 'line-width': 0.8, 'line-opacity': isDark ? 0.5 : 0.35 } });
+				})
+				.catch(() => {});
+
 			// Country labels
 			map!.addSource('country-labels', {
 				type: 'geojson',
