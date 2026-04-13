@@ -271,7 +271,8 @@
 			},
 			maxBounds: [DATA_BOUNDS[0] - 5, DATA_BOUNDS[1] - 5, DATA_BOUNDS[2] + 5, DATA_BOUNDS[3] + 5],
 			maxZoom: 14,
-			minZoom: 2
+			minZoom: 2,
+			cooperativeGestures: true
 		});
 
 		const isMobile = window.innerWidth <= 768;

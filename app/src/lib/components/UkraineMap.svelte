@@ -65,7 +65,8 @@
 			},
 			maxBounds: [[BBOX[0][0] - 5, BBOX[0][1] - 5], [BBOX[1][0] + 5, BBOX[1][1] + 5]],
 			maxZoom: 14,
-			minZoom: 3
+			minZoom: 3,
+			cooperativeGestures: true
 		});
 
 		map.fitBounds(BBOX, { padding: isMobile ? 10 : 40 });
