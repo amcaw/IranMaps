@@ -46,7 +46,7 @@
 			{#snippet extra()}
 				<span class="crimea-row">
 					<span class="hatch-dot"></span>
-					<span class="crimea-label">Crimée annexée en 2014</span>
+					<span class="crimea-label">Territoires ukrainiens contrôlés par la Russie avant février 2022</span>
 				</span>
 			{/snippet}
 		</Legend>

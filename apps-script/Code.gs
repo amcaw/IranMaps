@@ -234,6 +234,12 @@ function commitFilesToGitHub(files, message, token) {
     tree: treeItems
   }, headers);
 
+  // Skip commit if tree is unchanged (data already up to date)
+  if (treeResp.sha === baseTreeSha) {
+    Logger.log("No changes — data already up to date, skipping commit");
+    return;
+  }
+
   var newCommitResp = githubApi("POST", baseUrl + "/git/commits", {
     message: message,
     tree: treeResp.sha,
