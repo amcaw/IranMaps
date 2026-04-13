@@ -56,6 +56,30 @@ function normalizeFilename(attName, layerMap) {
   return attName.toLowerCase().replace(/[^a-z0-9.]/g, '_').replace(/_+/g, '_');
 }
 
+// ── Date extraction from email subjects ────────────────────────────
+
+var MONTHS = {
+  "january": "01", "february": "02", "march": "03", "april": "04",
+  "may": "05", "june": "06", "july": "07", "august": "08",
+  "september": "09", "october": "10", "november": "11", "december": "12"
+};
+
+/**
+ * Extracts a date string from ISW email subjects like:
+ *   "ISW–CTP Daily Shapefiles (Ukraine) – April 12, 2026"
+ *   "ISW Iran Crisis Shapefiles Evening of April 12, 2026"
+ * Returns "2026-04-12" or null if not found.
+ */
+function extractSubjectDate(subject) {
+  if (!subject) return null;
+  var match = subject.match(/(\w+)\s+(\d{1,2}),?\s+(\d{4})/);
+  if (!match) return null;
+  var month = MONTHS[match[1].toLowerCase()];
+  if (!month) return null;
+  var day = match[2].length === 1 ? "0" + match[2] : match[2];
+  return match[3] + "-" + month + "-" + day;
+}
+
 // ── Entry point (called by daily trigger) ──────────────────────────
 
 function processNewEmails() {
@@ -78,11 +102,28 @@ function processRegion(regionName, config, token) {
 
   Logger.log("[" + regionName + "] Found " + threads.length + " unprocessed thread(s)");
 
-  threads.sort(function(a, b) {
-    return b.getLastMessageDate().getTime() - a.getLastMessageDate().getTime();
-  });
+  // Sort by date extracted from subject (e.g. "April 12, 2026") rather than
+  // message date, because forwarded emails ("TR:") can have a recent date
+  // but contain old attachments.
+  var latestThread = null;
+  var latestSubjectDate = null;
 
-  var latestThread = threads[0];
+  for (var t = 0; t < threads.length; t++) {
+    var subjectDate = extractSubjectDate(threads[t].getFirstMessageSubject());
+    if (subjectDate && (!latestSubjectDate || subjectDate > latestSubjectDate)) {
+      latestSubjectDate = subjectDate;
+      latestThread = threads[t];
+    }
+  }
+
+  // Fallback to most recent thread if no subject dates found
+  if (!latestThread) {
+    threads.sort(function(a, b) {
+      return b.getLastMessageDate().getTime() - a.getLastMessageDate().getTime();
+    });
+    latestThread = threads[0];
+  }
+
   var messages = latestThread.getMessages();
   var latestMsg = messages[messages.length - 1];
 
