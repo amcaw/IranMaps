@@ -57,7 +57,7 @@
 			</svg>
 		</button>
 		<span class="current-date">{formatDate(dates[selectedIndex])}</span>
-		<span class="feature-count">{featureCount.toLocaleString()} frappes</span>
+		<span class="feature-count">{featureCount.toLocaleString()} frappes {cumulative ? 'au total' : 'ce jour'}</span>
 		<div class="controls-right">
 			<div class="mode-tabs">
 				<button class="mode-tab" class:active={cumulative} onclick={() => cumulative = true}>Cumulatif</button>

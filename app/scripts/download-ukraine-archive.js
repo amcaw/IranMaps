@@ -1,139 +1,131 @@
 /**
- * Downloads weekly snapshots of Ukraine control-of-terrain from ISW ArcGIS.
+ * Downloads weekly snapshots of Ukraine data from Le Monde's CDN.
+ * Le Monde mirrors ISW data as TopoJSON, updated weekly.
  *
- * Source: UkrainianCoTTimelapse_FEB_2022_to_DEC_2024_view (layer 0)
- *   - 1041 daily snapshots, Feb 24 2022 → Dec 31 2024
- *   - Each feature has a `datetime` field
+ * Layers:
+ *   - UkraineControlMap (medias/)
+ *   - AssessedRussianAdvancesinUkraine (assets/)
+ *   - Kursk_Incursion_Claimed_Limit_of_Ukrainian_Advance (medias/)
  *
- * Outputs one GeoJSON per week to data/ukraine/archive/YYYY-MM-DD.geojson
+ * Date range: Feb 24, 2022 → present (weekly, mostly Sundays/Saturdays)
  *
- * Rate limit: 6000 request units/min (shared across all ISW ArcGIS users).
- * This script uses 10s delays between requests to stay well under the limit.
- * If rate-limited, it waits 90s and retries automatically.
+ * Outputs to data/ukraine/archive/YYYY-MM-DD/
+ *   - control_map.topojson
+ *   - russian_advances.topojson
+ *   - kursk_ukrainian_advance.topojson
  *
  * Usage:
  *   cd app && node scripts/download-ukraine-archive.js
  *
- * The script is resumable — it skips dates that already have a file.
- * You can interrupt and re-run safely.
+ * Resumable — skips dates that already have all files.
  */
 
-import { writeFileSync, existsSync, mkdirSync } from 'fs';
+import { writeFileSync, existsSync, mkdirSync, readdirSync } from 'fs';
 import { join } from 'path';
 
 const ARCHIVE_DIR = join(import.meta.dirname, '../../data/ukraine/archive');
-const BASE_URL = 'https://services5.arcgis.com/SaBe5HMtmnbqSWlu/arcgis/rest/services/UkrainianCoTTimelapse_FEB_2022_to_DEC_2024_view/FeatureServer/0/query';
+const BASE = 'https://assets-decodeurs.lemonde.fr/decodeurs';
 
-const DELAY_MS = 10000; // 10s between requests
-const RETRY_DELAY_MS = 90000; // 90s on rate limit
+const HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:149.0) Gecko/20100101 Firefox/149.0',
+  'Referer': 'https://www.lemonde.fr/international/article/2023/07/28/les-cartes-de-la-guerre-en-ukraine-depuis-l-invasion-russe-de-fevrier-2022_6118209_3213.html',
+  'Origin': 'https://www.lemonde.fr',
+};
+
+const LAYERS = [
+  { name: 'control_map', url: `${BASE}/medias/UkraineControlMap` },
+  { name: 'russian_advances', url: `${BASE}/assets/AssessedRussianAdvancesinUkraine` },
+  { name: 'kursk_ukrainian_advance', url: `${BASE}/medias/Kursk_Incursion_Claimed_Limit_of_Ukrainian_Advance` },
+];
+
+// Kursk incursion started Aug 2024
+const KURSK_START = '2024-08-01';
+
+const DELAY_MS = 500; // Le Monde CDN has no strict rate limit, but be polite
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-async function query(params, retries = 3) {
-  const url = BASE_URL + '?' + new URLSearchParams({ f: 'json', ...params });
-  const resp = await fetch(url);
-  const data = await resp.json();
+// Generate candidate dates: every day from Feb 24 2022, try to find which ones exist
+// We know it's roughly weekly (Sundays/Saturdays), so we generate all possible
+// weekly dates and probe them.
+function generateWeeklyDates() {
+  const dates = [];
+  const start = new Date('2022-02-24');
+  const now = new Date();
 
-  if (data.error) {
-    if (data.error.code === 429 && retries > 0) {
-      console.log(`  ⏳ Rate limited, waiting ${RETRY_DELAY_MS / 1000}s...`);
-      await sleep(RETRY_DELAY_MS);
-      return query(params, retries - 1);
-    }
-    throw new Error(JSON.stringify(data.error));
+  // First date is always Feb 24
+  dates.push('2022-02-24');
+
+  // Then every 7 days, but try both Saturday and Sunday since the pattern varies
+  let d = new Date('2022-02-27'); // first Sunday after invasion
+  while (d <= now) {
+    dates.push(d.toISOString().slice(0, 10));
+    d = new Date(d.getTime() + 7 * 86400000);
   }
-  return data;
+
+  return dates;
 }
 
-async function queryGeoJSON(params, retries = 3) {
-  const url = BASE_URL + '?' + new URLSearchParams({ f: 'geojson', ...params });
-  const resp = await fetch(url);
-  const data = await resp.json();
-
-  if (data.error) {
-    if (data.error.code === 429 && retries > 0) {
-      console.log(`  ⏳ Rate limited, waiting ${RETRY_DELAY_MS / 1000}s...`);
-      await sleep(RETRY_DELAY_MS);
-      return queryGeoJSON(params, retries - 1);
-    }
-    throw new Error(JSON.stringify(data.error));
+async function downloadFile(url, outPath) {
+  const resp = await fetch(url, { headers: HEADERS });
+  if (resp.status === 200) {
+    const text = await resp.text();
+    writeFileSync(outPath, text);
+    return true;
   }
-  return data;
+  return false;
 }
 
-// ── Get all available dates ────────────────────────────────────────
-
-console.log('Fetching available dates...');
-const datesResp = await query({
-  where: 'datetime IS NOT NULL',
-  outFields: 'datetime',
-  returnGeometry: 'false',
-  returnDistinctValues: 'true',
-  orderByFields: 'datetime ASC',
-  resultRecordCount: '2000',
-});
-
-const allDates = datesResp.features
-  .map(f => f.attributes.datetime)
-  .filter(Boolean)
-  .map(ts => new Date(ts).toISOString().slice(0, 10));
-
-console.log(`Found ${allDates.length} dates (${allDates[0]} → ${allDates[allDates.length - 1]})\n`);
-
-// ── Pick one date per week ─────────────────────────────────────────
-
-const weeklyDates = [];
-let lastPicked = null;
-for (const dateStr of allDates) {
-  const d = new Date(dateStr);
-  if (!lastPicked || (d - lastPicked) >= 6 * 86400000) {
-    weeklyDates.push(dateStr);
-    lastPicked = d;
-  }
-}
-console.log(`Selected ${weeklyDates.length} weekly snapshots\n`);
-
-// ── Download each snapshot ─────────────────────────────────────────
+// ── Main ───────────────────────────────────────────────────────────
 
 if (!existsSync(ARCHIVE_DIR)) mkdirSync(ARCHIVE_DIR, { recursive: true });
 
+const candidates = generateWeeklyDates();
+console.log(`Checking ${candidates.length} candidate dates...\n`);
+
 let downloaded = 0;
 let skipped = 0;
-let failed = 0;
+let notFound = 0;
 
-for (const dateStr of weeklyDates) {
-  const outPath = join(ARCHIVE_DIR, `${dateStr}.geojson`);
+for (const dateStr of candidates) {
+  const dateDir = join(ARCHIVE_DIR, dateStr);
 
-  if (existsSync(outPath)) {
+  // Skip if directory exists and has files
+  if (existsSync(dateDir) && readdirSync(dateDir).length > 0) {
     skipped++;
     continue;
   }
 
-  process.stdout.write(`  ${dateStr}: `);
+  // Try control map first to check if date exists
+  const testUrl = `${LAYERS[0].url}/${dateStr}.topojson`;
+  const testResp = await fetch(testUrl, { headers: HEADERS });
 
-  try {
-    const geojson = await queryGeoJSON({
-      where: `datetime >= TIMESTAMP '${dateStr} 00:00:00' AND datetime < TIMESTAMP '${dateStr} 23:59:59'`,
-      outFields: '*',
-      outSR: '4326',
-      resultRecordCount: '2000',
-    });
-
-    if (!geojson.features || geojson.features.length === 0) {
-      console.log('no data');
-      failed++;
-    } else {
-      writeFileSync(outPath, JSON.stringify(geojson));
-      console.log(`${geojson.features.length} features`);
-      downloaded++;
-    }
-  } catch (e) {
-    console.log(`error: ${e.message.slice(0, 100)}`);
-    failed++;
+  if (testResp.status !== 200) {
+    notFound++;
+    continue;
   }
 
+  mkdirSync(dateDir, { recursive: true });
+  process.stdout.write(`  ${dateStr}: `);
+
+  // Save control map (already fetched)
+  writeFileSync(join(dateDir, 'control_map.topojson'), await testResp.text());
+  let count = 1;
+
+  // Download remaining layers
+  for (const layer of LAYERS.slice(1)) {
+    // Skip Kursk before it started
+    if (layer.name === 'kursk_ukrainian_advance' && dateStr < KURSK_START) continue;
+
+    await sleep(DELAY_MS);
+    const ok = await downloadFile(`${layer.url}/${dateStr}.topojson`, join(dateDir, `${layer.name}.topojson`));
+    if (ok) count++;
+  }
+
+  console.log(`${count} files`);
+  downloaded++;
   await sleep(DELAY_MS);
 }
 
-console.log(`\nDone. Downloaded: ${downloaded}, Skipped: ${skipped}, Failed: ${failed}`);
+console.log(`\nDone. Downloaded: ${downloaded}, Skipped: ${skipped}, Not found: ${notFound}`);
 console.log(`Archive: ${ARCHIVE_DIR}`);

@@ -9,6 +9,10 @@
 			<span class="card-title">Ukraine</span>
 			<span class="card-desc">Carte du controle territorial en Ukraine</span>
 		</a>
+		<a class="map-card" href="ukraine-timeline">
+			<span class="card-title">Ukraine (timelapse)</span>
+			<span class="card-desc">Évolution du front depuis fév. 2022</span>
+		</a>
 	</div>
 </div>
 
