@@ -103,6 +103,7 @@
 		flex: 1;
 		min-height: 300px;
 		overflow: hidden;
+		border-radius: 10px;
 	}
 
 	.source-credit {
