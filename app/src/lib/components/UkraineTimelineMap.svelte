@@ -135,16 +135,19 @@
 		map.addControl(new maplibregl.NavigationControl(), 'top-right');
 		map.addControl(new maplibregl.ScaleControl({ maxWidth: 150, unit: 'metric' }), 'bottom-right');
 
-		// Fit bbox height to container height using Mercator math
+		// Fit bbox to container, choosing the tighter dimension
 		const ro = new ResizeObserver(() => {
 			const h = mapContainer.clientHeight;
-			if (!h) return;
+			const w = mapContainer.clientWidth;
+			if (!h || !w) return;
 			const toRad = Math.PI / 180;
 			const yMin = Math.log(Math.tan(toRad * BBOX[0][1] / 2 + Math.PI / 4));
 			const yMax = Math.log(Math.tan(toRad * BBOX[1][1] / 2 + Math.PI / 4));
-			const mercatorSpan = yMax - yMin;
-			// 512 = tile size at zoom 0, full world = 2π in Mercator
-			const zoom = Math.log2((h * 2 * Math.PI) / (512 * mercatorSpan));
+			const mercatorSpanY = yMax - yMin;
+			const lngSpan = BBOX[1][0] - BBOX[0][0];
+			const zoomH = Math.log2((h * 2 * Math.PI) / (512 * mercatorSpanY));
+			const zoomW = Math.log2((w * 360) / (512 * lngSpan));
+			const zoom = Math.min(zoomH, zoomW);
 			const centerLng = (BBOX[0][0] + BBOX[1][0]) / 2;
 			const centerLat = (BBOX[0][1] + BBOX[1][1]) / 2;
 			map!.jumpTo({ center: [centerLng, centerLat], zoom });

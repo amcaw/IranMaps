@@ -77,7 +77,7 @@
 		/>
 		<div class="source-credit">
 			<span>Source : Institute for the Study of War and AEI's Critical Threats Project.</span>
-			<span class="last-update">Maj : {new Date(lastUpdate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Europe/Paris' })}</span>
+			<span class="last-update">Màj : {new Date(lastUpdate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Europe/Paris' })}</span>
 		</div>
 	{:else}
 		<div class="loading">Chargement des donnees...</div>
