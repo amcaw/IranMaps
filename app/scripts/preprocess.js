@@ -34,9 +34,14 @@ function isWebMercator(coords) {
 function extractDate(props) {
   const raw = props.strikedate || props.AssessedDa || props.event_date || props.date || props.Date || props.post_date || props.Post_Date || null;
   if (!raw) return null;
+  if (typeof raw === 'string' && raw.includes('T')) {
+    // shpjs stores dates shifted by timezone (e.g. April 13 → "2026-04-12T22:00:00.000Z")
+    // Round to nearest day to recover the original date
+    const d = new Date(raw);
+    d.setUTCHours(d.getUTCHours() + 12);
+    return d.toISOString().slice(0, 10);
+  }
   if (typeof raw === 'string') {
-    // Extract YYYY-MM-DD directly from ISO string (e.g. "2026-04-12T00:00:00.000Z")
-    // This avoids timezone parsing issues from shpjs date handling
     const match = raw.match(/^(\d{4}-\d{2}-\d{2})/);
     if (match) return match[1];
   }
