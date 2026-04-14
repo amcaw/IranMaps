@@ -56,24 +56,28 @@ for (const region of REGIONS) {
 
   console.log(`\n[${region}] Converting ${zipFiles.length} shapefiles...`);
 
-  // Track which stable names we produce
-  const stableNames = new Set();
-
+  // Group zips by stable name, keeping only the newest zip per name
+  const newestZipPerName = {};
   for (const zipFile of zipFiles) {
     const rawName = basename(zipFile, '.zip');
     const stableName = normalizeGeoJsonName(rawName, regionMap);
-
     if (!stableName) {
       console.log(`  Skipped (no mapping): ${rawName}`);
       continue;
     }
+    const mtime = statSync(join(zipsDir, zipFile)).mtimeMs;
+    if (!newestZipPerName[stableName] || mtime > newestZipPerName[stableName].mtime) {
+      newestZipPerName[stableName] = { zipFile, mtime };
+    }
+  }
 
-    stableNames.add(`${stableName}.geojson`);
+  const stableNames = new Set(Object.keys(newestZipPerName).map(n => `${n}.geojson`));
+
+  for (const [stableName, { zipFile, mtime: zipMtime }] of Object.entries(newestZipPerName)) {
     const outPath = join(geojsonDir, `${stableName}.geojson`);
 
-    // Skip if geojson is newer than the zip
+    // Skip if geojson is newer than the newest zip
     if (existsSync(outPath)) {
-      const zipMtime = statSync(join(zipsDir, zipFile)).mtimeMs;
       const outMtime = statSync(outPath).mtimeMs;
       if (outMtime > zipMtime) {
         console.log(`  Up to date: ${stableName}.geojson`);
