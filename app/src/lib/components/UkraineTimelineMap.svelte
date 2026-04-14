@@ -6,11 +6,13 @@
 	let {
 		selectedDate,
 		layers,
-		visibleLayers
+		visibleLayers,
+		currentData = $bindable(null),
 	}: {
 		selectedDate: string;
 		layers: Array<{ id: string; label: string; color: string; fillColor: string; fillOpacity: number }>;
 		visibleLayers: Set<string>;
+		currentData?: any;
 	} = $props();
 
 	let mapContainer: HTMLDivElement;
@@ -236,7 +238,7 @@
 				.addTo(map!);
 
 			// Load initial date
-			fetchDateData(selectedDate).then(d => { if (d) updateMapData(d); });
+			fetchDateData(selectedDate).then(d => { if (d) { updateMapData(d); currentData = d; } });
 		});
 
 		// Mini map
@@ -286,7 +288,7 @@
 	$effect(() => {
 		const date = selectedDate;
 		if (!mapLoaded) return;
-		fetchDateData(date).then(d => { if (d) updateMapData(d); });
+		fetchDateData(date).then(d => { if (d) { updateMapData(d); currentData = d; } });
 	});
 
 	// React to layer visibility changes

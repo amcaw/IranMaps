@@ -19,15 +19,55 @@
 	let visibleLayers = $state(new Set<string>());
 
 	let selectedDate = $derived(manifest?.dates[selectedIndex] ?? '');
+	let currentData: any = $state(null);
+
+	// Compute area per layer from current GeoJSON
+	function ringArea(ring: number[][]) {
+		const RAD = Math.PI / 180, R = 6371000;
+		let area = 0;
+		for (let i = 0; i < ring.length - 1; i++) {
+			const p1 = ring[i], p2 = ring[i + 1];
+			area += (p2[0] - p1[0]) * RAD * (2 + Math.sin(p1[1] * RAD) + Math.sin(p2[1] * RAD));
+		}
+		return Math.abs(area * R * R / 2);
+	}
+
+	function featureArea(geom: any): number {
+		if (!geom) return 0;
+		if (geom.type === 'Polygon') {
+			let a = ringArea(geom.coordinates[0]);
+			for (let i = 1; i < geom.coordinates.length; i++) a -= ringArea(geom.coordinates[i]);
+			return a;
+		}
+		if (geom.type === 'MultiPolygon') {
+			let a = 0;
+			for (const poly of geom.coordinates) {
+				a += ringArea(poly[0]);
+				for (let i = 1; i < poly.length; i++) a -= ringArea(poly[i]);
+			}
+			return a;
+		}
+		return 0;
+	}
 
 	let countsByLayer = $derived.by(() => {
-		// No per-feature counts for the timeline view
-		return {};
+		if (!currentData?.features) return {};
+		const counts: Record<string, number> = {};
+		for (const f of currentData.features) {
+			const id = f.properties.layer;
+			counts[id] = (counts[id] || 0) + 1;
+		}
+		return counts;
 	});
 
-	let layersWithCount = $derived(
-		manifest?.layers.map(l => ({ ...l, count: 0, areaKm2: undefined as number | undefined })) ?? []
-	);
+	let layersWithCount = $derived.by(() => {
+		if (!manifest) return [];
+		return manifest.layers.map(l => {
+			const features = currentData?.features?.filter((f: any) => f.properties.layer === l.id) ?? [];
+			const areaKm2 = Math.round(features.reduce((sum: number, f: any) => sum + featureArea(f.geometry), 0) / 1e6);
+			return { ...l, count: features.length, areaKm2 };
+		});
+	});
 
 	onMount(async () => {
 		const res = await fetch(`${import.meta.env.BASE_URL}data/ukraine-archive/manifest.json`);
@@ -59,6 +99,7 @@
 				{selectedDate}
 				layers={manifest.layers}
 				{visibleLayers}
+				bind:currentData
 			/>
 		</div>
 		<UkraineTimeline
