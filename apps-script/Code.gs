@@ -122,12 +122,25 @@ function processRegion(regionName, config, token) {
       return b.getLastMessageDate().getTime() - a.getLastMessageDate().getTime();
     });
     latestThread = threads[0];
+    latestSubjectDate = extractSubjectDate(latestThread.getFirstMessageSubject());
+  }
+
+  // Skip if this email's data is not newer than what we last processed
+  var lastDateKey = "last_date_" + regionName;
+  var lastProcessedDate = PropertiesService.getScriptProperties().getProperty(lastDateKey);
+  if (latestSubjectDate && lastProcessedDate && latestSubjectDate <= lastProcessedDate) {
+    Logger.log("[" + regionName + "] Skipping — email date " + latestSubjectDate + " is not newer than last processed " + lastProcessedDate);
+    // Still label threads so they don't get picked up again
+    for (var t = 0; t < threads.length; t++) {
+      threads[t].addLabel(label);
+    }
+    return;
   }
 
   var messages = latestThread.getMessages();
   var latestMsg = messages[messages.length - 1];
 
-  Logger.log("[" + regionName + "] Processing: " + latestMsg.getSubject());
+  Logger.log("[" + regionName + "] Processing: " + latestMsg.getSubject() + " (date: " + latestSubjectDate + ")");
 
   var attachments = latestMsg.getAttachments();
   var filesToCommit = [];
@@ -187,6 +200,11 @@ function processRegion(regionName, config, token) {
 
   if (uniqueFiles.length > 0) {
     commitFilesToGitHub(uniqueFiles, "Update " + regionName + " shapefiles", token);
+  }
+
+  // Save last processed date so we don't regress to older data
+  if (latestSubjectDate) {
+    PropertiesService.getScriptProperties().setProperty(lastDateKey, latestSubjectDate);
   }
 
   // Label threads only after successful commit (data is cumulative,
