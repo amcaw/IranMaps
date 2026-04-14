@@ -1,0 +1,1 @@
+import{H as e,J as t,P as n,U as r,b as i,m as a,r as o,y as s}from"../chunks/BSRQKwop.js";import"../chunks/CFKVnMbq.js";var c=t({prerender:()=>!0,ssr:()=>!1});function l(t,c){r(c,!0),o(()=>{/Mac|iPhone|iPad/.test(navigator.userAgent)&&document.body.classList.add(`is-mac`)});var l=i();a(n(l),()=>c.children),s(t,l),e()}export{l as component,c as universal};
