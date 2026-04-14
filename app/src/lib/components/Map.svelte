@@ -3,6 +3,7 @@
 	import maplibregl from 'maplibre-gl';
 	import type { StrikeData, LayerMeta } from '$lib/types';
 	import { t } from '$lib/i18n';
+	import { isDarkStore } from '$lib/theme';
 
 	let {
 		data,
@@ -24,7 +25,8 @@
 	let miniMap: maplibregl.Map | null = null;
 	let popup: maplibregl.Popup | null = null;
 	let annotationLayerIds: string[] = [];
-	const isDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+	let isDark = $state(false);
+	const unsub = isDarkStore.subscribe(v => isDark = v);
 
 	function clearHighlight() {
 		if (map?.getSource('highlight')) {
@@ -486,6 +488,34 @@
 	onDestroy(() => {
 		map?.remove();
 		miniMap?.remove();
+		unsub();
+	});
+
+	// React to theme changes
+	$effect(() => {
+		const dark = isDark;
+		if (!map || !map.isStyleLoaded()) return;
+		// Basemap tiles
+		const tileVariant = dark ? 'dark_nolabels' : 'light_nolabels';
+		if (map.getSource('carto-basemap')) {
+			(map.getSource('carto-basemap') as any).setTiles([
+				`https://a.basemaps.cartocdn.com/${tileVariant}/{z}/{x}/{y}@2x.png`,
+				`https://b.basemaps.cartocdn.com/${tileVariant}/{z}/{x}/{y}@2x.png`,
+			]);
+		}
+		// Country labels
+		if (map.getLayer('country-labels-text')) {
+			map.setPaintProperty('country-labels-text', 'text-color', dark ? '#777' : '#999');
+			map.setPaintProperty('country-labels-text', 'text-halo-color', dark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)');
+		}
+		// Highlight ring
+		if (map.getLayer('highlight-ring')) {
+			map.setPaintProperty('highlight-ring', 'circle-stroke-color', dark ? '#ffffff' : '#000000');
+		}
+		// Mini map tiles
+		if (miniMap?.getSource('carto-mini')) {
+			(miniMap.getSource('carto-mini') as any).setTiles([`https://a.basemaps.cartocdn.com/${tileVariant}/{z}/{x}/{y}.png`]);
+		}
 	});
 
 	$effect(() => {

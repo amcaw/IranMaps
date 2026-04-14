@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import maplibregl from 'maplibre-gl';
+	import { isDarkStore } from '$lib/theme';
 
 	let {
 		selectedDate,
@@ -17,7 +18,8 @@
 	let map: maplibregl.Map | null = null;
 	let miniMap: maplibregl.Map | null = null;
 	let mapLoaded = false;
-	const isDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+	let isDark = $state(false);
+	const unsub = isDarkStore.subscribe(v => isDark = v);
 
 	const BBOX: [[number, number], [number, number]] = [[18.87, 42.92], [42.95, 52.84]];
 
@@ -253,7 +255,32 @@
 		});
 	});
 
-	onDestroy(() => { map?.remove(); miniMap?.remove(); });
+	onDestroy(() => { map?.remove(); miniMap?.remove(); unsub(); });
+
+	// React to theme changes
+	$effect(() => {
+		const dark = isDark;
+		if (!map || !mapLoaded) return;
+		map.setPaintProperty('background', 'background-color', dark ? '#0e0e0e' : '#FAFAF8');
+		map.setPaintProperty('water', 'fill-color', dark ? '#262626' : '#D4DADC');
+		map.setPaintProperty('boundary_state', 'line-color', dark ? 'hsl(0, 0%, 21%)' : 'hsl(0, 0%, 65%)');
+		if (map.getLayer('ukraine-oblasts-line')) map.setPaintProperty('ukraine-oblasts-line', 'line-color', dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)');
+		if (map.getLayer('crimea-hatch-lines')) {
+			map.setPaintProperty('crimea-hatch-lines', 'line-color', dark ? '#dc2626' : '#991b1b');
+			map.setPaintProperty('crimea-hatch-lines', 'line-opacity', dark ? 0.5 : 0.35);
+		}
+		if (map.getLayer('pre2022-hatch-lines')) {
+			map.setPaintProperty('pre2022-hatch-lines', 'line-color', dark ? '#dc2626' : '#991b1b');
+			map.setPaintProperty('pre2022-hatch-lines', 'line-opacity', dark ? 0.5 : 0.35);
+		}
+		if (map.getLayer('country-labels-text')) {
+			map.setPaintProperty('country-labels-text', 'text-color', dark ? '#777' : '#999');
+			map.setPaintProperty('country-labels-text', 'text-halo-color', dark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)');
+		}
+		if (miniMap?.getSource('carto-mini')) {
+			(miniMap.getSource('carto-mini') as any).setTiles([`https://a.basemaps.cartocdn.com/${dark ? 'dark_nolabels' : 'light_nolabels'}/{z}/{x}/{y}.png`]);
+		}
+	});
 
 	// React to date changes
 	$effect(() => {
