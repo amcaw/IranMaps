@@ -219,6 +219,14 @@
 			new maplibregl.Marker({ element: kyivEl, anchor: 'left' })
 				.setLngLat([30.523333, 50.450001])
 				.addTo(map!);
+
+			// Crimea label
+			const crimeaEl = document.createElement('div');
+			crimeaEl.className = 'crimea-marker';
+			crimeaEl.innerHTML = '<span class="crimea-map-label">Crimée<br>annexée<br>en 2014</span>';
+			new maplibregl.Marker({ element: crimeaEl, anchor: 'center' })
+				.setLngLat([34.1, 45.3])
+				.addTo(map!);
 		});
 
 		// Mini map
@@ -312,5 +320,23 @@
 		color: var(--text);
 		white-space: nowrap;
 		text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+	}
+
+	:global(.crimea-marker) {
+		pointer-events: none;
+		z-index: 5;
+		display: flex;
+		justify-content: center;
+	}
+
+	:global(.crimea-map-label) {
+		font-family: 'Montserrat', sans-serif;
+		font-size: 10px;
+		font-weight: 500;
+		font-style: italic;
+		color: var(--text);
+		text-align: center;
+		line-height: 1.3;
+		text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
 	}
 </style>

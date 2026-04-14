@@ -237,6 +237,14 @@
 				.setLngLat([30.523333, 50.450001])
 				.addTo(map!);
 
+			// Crimea label
+			const crimeaEl = document.createElement('div');
+			crimeaEl.className = 'crimea-marker';
+			crimeaEl.innerHTML = '<span class="crimea-map-label">Crimée<br>annexée<br>en 2014</span>';
+			new maplibregl.Marker({ element: crimeaEl, anchor: 'center' })
+				.setLngLat([34.1, 45.3])
+				.addTo(map!);
+
 			// Load initial date
 			fetchDateData(selectedDate).then(d => { if (d) { updateMapData(d); currentData = d; } });
 		});
@@ -318,4 +326,6 @@
 	:global(.kyiv-marker) { display: flex; align-items: center; gap: 5px; pointer-events: none; z-index: 5; margin-left: -3.5px; margin-top: -3.5px; }
 	:global(.kyiv-square) { width: 7px; height: 7px; background: var(--text); flex-shrink: 0; }
 	:global(.kyiv-label) { font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); }
+	:global(.crimea-marker) { pointer-events: none; z-index: 5; display: flex; justify-content: center; }
+	:global(.crimea-map-label) { font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 500; font-style: italic; color: var(--text); text-align: center; line-height: 1.3; text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8); }
 </style>
