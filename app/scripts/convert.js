@@ -56,7 +56,11 @@ for (const region of REGIONS) {
 
   console.log(`\n[${region}] Converting ${zipFiles.length} shapefiles...`);
 
-  // Group zips by stable name, keeping only the newest zip per name
+  // Group zips by stable name, keeping only the newest zip per name.
+  // Prefer longer filenames as tiebreaker (dated files like
+  // "*_evening_of_april_15_2026.zip" are always longer than stable
+  // names like "us_israeli_strikes_iran.zip") — this handles CI
+  // where git checkout gives all files the same mtime.
   const newestZipPerName = {};
   for (const zipFile of zipFiles) {
     const rawName = basename(zipFile, '.zip');
@@ -66,7 +70,8 @@ for (const region of REGIONS) {
       continue;
     }
     const mtime = statSync(join(zipsDir, zipFile)).mtimeMs;
-    if (!newestZipPerName[stableName] || mtime > newestZipPerName[stableName].mtime) {
+    const existing = newestZipPerName[stableName];
+    if (!existing || mtime > existing.mtime || (mtime === existing.mtime && zipFile.length > existing.zipFile.length)) {
       newestZipPerName[stableName] = { zipFile, mtime };
     }
   }
