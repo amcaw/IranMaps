@@ -50,15 +50,21 @@
 <style>
 	.legend {
 		background: var(--bg);
-		padding: 14px 16px;
+		padding: 10px 16px;
 	}
 
-.layers {
+	.layers {
 		columns: 3;
-		column-gap: 12px;
+		column-gap: 16px;
 	}
 
-	@media (max-width: 768px) {
+	@media (max-width: 1024px) {
+		.layers {
+			columns: 2;
+		}
+	}
+
+	@media (max-width: 640px) {
 		.layers {
 			columns: 1;
 		}
@@ -67,8 +73,8 @@
 	.layer-row {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		padding: 4px 6px;
+		gap: 6px;
+		padding: 3px 6px;
 		border-radius: 5px;
 		border: none;
 		background: transparent;
@@ -78,7 +84,7 @@
 		text-align: left;
 		transition: opacity 0.15s;
 		line-height: 1.3;
-		break-inside: avoid;
+		white-space: normal;
 	}
 
 	.layer-row:hover {
@@ -96,13 +102,25 @@
 		flex-shrink: 0;
 	}
 
-	.layer-label {
-		white-space: nowrap;
-	}
-
-.layer-count {
+	.layer-count {
 		color: var(--text-dim);
 		font-size: 11px;
 		font-variant-numeric: tabular-nums;
+	}
+
+	@media (max-width: 640px) {
+		.legend {
+			padding: 8px 10px;
+		}
+
+		.layer-row {
+			font-size: 11px;
+			gap: 5px;
+			padding: 2px 4px;
+		}
+
+		.layer-count {
+			font-size: 10px;
+		}
 	}
 </style>

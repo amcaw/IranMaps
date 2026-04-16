@@ -150,8 +150,8 @@
 	.crimea-row {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		padding: 4px 6px;
+		gap: 6px;
+		padding: 3px 6px;
 		font-size: 12px;
 		color: var(--text);
 		line-height: 1.3;
@@ -166,8 +166,12 @@
 		border: 1px solid #991b1b;
 	}
 
-	.crimea-label {
-		white-space: normal;
+	@media (max-width: 640px) {
+		.crimea-row {
+			font-size: 11px;
+			gap: 5px;
+			padding: 2px 4px;
+		}
 	}
 
 	.loading {
