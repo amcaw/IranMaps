@@ -1,11 +1,14 @@
 /**
  * Converts shapefile zips to GeoJSON.
- * Handles both middle-east and ukraine data directories.
- * Normalizes output filenames to stable names using LAYER_MAP.
- * Cleans up old/dated geojson files that don't match stable names.
+ * Each zip in data/{region}/zips/ is mapped to a stable layer name
+ * and converted to data/{region}/geojson/{name}.geojson.
+ *
+ * The Apps Script normalizes filenames before pushing, so each
+ * stable name should have exactly one zip. If multiple zips map
+ * to the same name (legacy), the largest is used (cumulative data).
  */
 
-import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync, unlinkSync, rmSync, statSync } from 'fs';
+import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync, unlinkSync, statSync, rmSync } from 'fs';
 import { join, basename } from 'path';
 import shp from 'shpjs';
 
@@ -34,7 +37,6 @@ function normalizeGeoJsonName(zipName, regionMap) {
   for (const [key, stable] of Object.entries(regionMap)) {
     if (lower.includes(key)) return stable;
   }
-  // Also match if the zip already uses a stable name
   const stableValues = new Set(Object.values(regionMap));
   const cleaned = zipName.replace(/\.zip$/i, '').toLowerCase();
   if (stableValues.has(cleaned)) return cleaned;
@@ -56,49 +58,40 @@ for (const region of REGIONS) {
 
   console.log(`\n[${region}] Converting ${zipFiles.length} shapefiles...`);
 
-  // Group zips by stable name, keeping the largest file per name.
-  // ISW data is cumulative, so the biggest zip always has the latest data.
-  // This avoids mtime issues on CI where git checkout sets all mtimes equal.
-  const newestZipPerName = {};
+  // Map each zip to its stable name, pick largest if duplicates exist
+  const bestZipPerName = {};
   for (const zipFile of zipFiles) {
-    const rawName = basename(zipFile, '.zip');
-    const stableName = normalizeGeoJsonName(rawName, regionMap);
+    const stableName = normalizeGeoJsonName(basename(zipFile, '.zip'), regionMap);
     if (!stableName) {
-      console.log(`  Skipped (no mapping): ${rawName}`);
+      console.log(`  Skipped (no mapping): ${basename(zipFile, '.zip')}`);
       continue;
     }
     const size = statSync(join(zipsDir, zipFile)).size;
-    const existing = newestZipPerName[stableName];
-    if (!existing || size > existing.size) {
-      newestZipPerName[stableName] = { zipFile, size };
+    if (!bestZipPerName[stableName] || size > bestZipPerName[stableName].size) {
+      bestZipPerName[stableName] = { zipFile, size };
     }
   }
 
-  const stableNames = new Set(Object.keys(newestZipPerName).map(n => `${n}.geojson`));
+  const stableNames = new Set(Object.keys(bestZipPerName).map(n => `${n}.geojson`));
 
-  for (const [stableName, { zipFile }] of Object.entries(newestZipPerName)) {
+  // Convert each layer
+  for (const [stableName, { zipFile }] of Object.entries(bestZipPerName)) {
     const outPath = join(geojsonDir, `${stableName}.geojson`);
-
     const buffer = readFileSync(join(zipsDir, zipFile));
     const geojson = await shp(buffer);
     const fc = Array.isArray(geojson) ? geojson[0] : geojson;
-
     writeFileSync(outPath, JSON.stringify(fc));
-    console.log(`  Converted: ${stableName}.geojson from ${zipFile} (${fc.features.length} features)`);
+    console.log(`  ${stableName}.geojson ← ${zipFile} (${fc.features.length} features)`);
   }
 
-  // Clean up old/dated geojson files that aren't stable names
-  const existingFiles = readdirSync(geojsonDir).filter(f => f.endsWith('.geojson'));
-  for (const file of existingFiles) {
+  // Clean up old geojson files that no longer have a matching zip
+  for (const file of readdirSync(geojsonDir).filter(f => f.endsWith('.geojson'))) {
     if (!stableNames.has(file)) {
       unlinkSync(join(geojsonDir, file));
       console.log(`  Removed old: ${file}`);
     }
   }
-
-  // Clean up dated subdirectories (e.g. 2026-03-22/)
-  const entries = readdirSync(geojsonDir);
-  for (const entry of entries) {
+  for (const entry of readdirSync(geojsonDir)) {
     const entryPath = join(geojsonDir, entry);
     if (statSync(entryPath).isDirectory()) {
       rmSync(entryPath, { recursive: true });

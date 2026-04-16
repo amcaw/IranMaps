@@ -48,7 +48,8 @@ var REGIONS = {
 function normalizeFilename(attName, layerMap) {
   var lower = attName.toLowerCase().replace(/[^a-z]/g, '');
   for (var key in layerMap) {
-    if (lower.indexOf(key) !== -1) {
+    var normalizedKey = key.replace(/[^a-z]/g, '');
+    if (lower.indexOf(normalizedKey) !== -1) {
       return layerMap[key] + ".zip";
     }
   }
