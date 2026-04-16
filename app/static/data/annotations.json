@@ -166,7 +166,11 @@
       "opacity": 0.5,
       "label": "Téhéran",
       "labelPosition": "start",
-      "fontSize": 14
+      "fontSize": 14,
+      "mobileFrom": [49.2, 36.0],
+      "mobileTo": [50.41, 35.68],
+      "mobileCurve": 0.12,
+      "mobileLabelAnchor": "right"
     },
     {
       "id": "hormuz-label",
@@ -179,7 +183,11 @@
       "label": "Détroit\nd'Ormuz",
       "labelPosition": "start",
       "labelAnchor": "left",
-      "fontSize": 12
+      "fontSize": 12,
+      "mobileFrom": [53.5, 26.5],
+      "mobileTo": [54.56, 26.48],
+      "mobileCurve": 0.1,
+      "mobileLabelAnchor": "right"
     }
   ]
 }

@@ -180,7 +180,7 @@
 					map.addLayer({ id: 'ukraine-oblasts-line', type: 'line', source: 'ukraine-oblasts', paint: { 'line-color': isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)', 'line-width': 0.8, 'line-dasharray': [4, 3] } });
 				}).catch(() => {});
 
-			// Crimea hatched overlay
+// Crimea hatched overlay
 			fetch(`${import.meta.env.BASE_URL}data/crimea.json`)
 				.then(r => r.json())
 				.then(crimea => {
@@ -277,7 +277,7 @@
 		map.setPaintProperty('background', 'background-color', dark ? '#0e0e0e' : '#FAFAF8');
 		map.setPaintProperty('water', 'fill-color', dark ? '#262626' : '#D4DADC');
 		map.setPaintProperty('boundary_state', 'line-color', dark ? 'hsl(0, 0%, 21%)' : 'hsl(0, 0%, 65%)');
-		if (map.getLayer('ukraine-oblasts-line')) map.setPaintProperty('ukraine-oblasts-line', 'line-color', dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)');
+if (map.getLayer('ukraine-oblasts-line')) map.setPaintProperty('ukraine-oblasts-line', 'line-color', dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)');
 		if (map.getLayer('crimea-hatch-lines')) {
 			map.setPaintProperty('crimea-hatch-lines', 'line-color', dark ? '#dc2626' : '#991b1b');
 			map.setPaintProperty('crimea-hatch-lines', 'line-opacity', dark ? 0.5 : 0.35);

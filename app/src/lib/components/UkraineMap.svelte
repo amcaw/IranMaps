@@ -116,15 +116,35 @@
 					}
 				]
 			},
-			maxBounds: [[BBOX[0][0] - 3, BBOX[0][1] - 3], [BBOX[1][0] + 3, BBOX[1][1] + 3]],
 			maxZoom: 14,
 			minZoom: 3,
 			cooperativeGestures: true
 		});
 
-		map.fitBounds(BBOX);
 		map.addControl(new maplibregl.NavigationControl(), 'top-right');
 		map.addControl(new maplibregl.ScaleControl({ maxWidth: 150, unit: 'metric' }), 'bottom-right');
+
+		// Fit bbox to container, choosing the tighter dimension
+		const ro = new ResizeObserver(() => {
+			const h = mapContainer.clientHeight;
+			const w = mapContainer.clientWidth;
+			if (!h || !w) return;
+			const toRad = Math.PI / 180;
+			const yMin = Math.log(Math.tan(toRad * BBOX[0][1] / 2 + Math.PI / 4));
+			const yMax = Math.log(Math.tan(toRad * BBOX[1][1] / 2 + Math.PI / 4));
+			const mercatorSpanY = yMax - yMin;
+			const lngSpan = BBOX[1][0] - BBOX[0][0];
+			const zoomH = Math.log2((h * 2 * Math.PI) / (512 * mercatorSpanY));
+			const zoomW = Math.log2((w * 360) / (512 * lngSpan));
+			const zoom = Math.min(zoomH, zoomW);
+			const centerLng = (BBOX[0][0] + BBOX[1][0]) / 2;
+			const centerLat = (BBOX[0][1] + BBOX[1][1]) / 2;
+			map!.jumpTo({ center: [centerLng, centerLat], zoom });
+			const bounds = map!.getBounds();
+			map!.setMaxBounds(bounds);
+			ro.disconnect();
+		});
+		ro.observe(mapContainer);
 
 			// Expand compact attribution by default
 			const attribBtn = mapContainer.querySelector('.maplibregl-ctrl-attrib-button');
@@ -155,10 +175,9 @@
 								'line-dasharray': [4, 3]
 							}
 						});
-						})
-					.catch(() => {});
+					}).catch(() => {});
 
-				// Crimea hatched overlay
+// Crimea hatched overlay
 			fetch(`${import.meta.env.BASE_URL}data/crimea.json`)
 				.then(r => r.json())
 				.then(crimea => {
@@ -254,7 +273,7 @@
 		map.setPaintProperty('background', 'background-color', dark ? '#0e0e0e' : '#FAFAF8');
 		map.setPaintProperty('water', 'fill-color', dark ? '#262626' : '#D4DADC');
 		map.setPaintProperty('boundary_state', 'line-color', dark ? 'hsl(0, 0%, 21%)' : 'hsl(0, 0%, 65%)');
-		if (map.getLayer('ukraine-oblasts-line')) map.setPaintProperty('ukraine-oblasts-line', 'line-color', dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)');
+if (map.getLayer('ukraine-oblasts-line')) map.setPaintProperty('ukraine-oblasts-line', 'line-color', dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)');
 		if (map.getLayer('crimea-hatch-lines')) {
 			map.setPaintProperty('crimea-hatch-lines', 'line-color', dark ? '#dc2626' : '#991b1b');
 			map.setPaintProperty('crimea-hatch-lines', 'line-opacity', dark ? 0.5 : 0.35);

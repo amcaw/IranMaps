@@ -128,6 +128,10 @@
 		labelPosition?: 'start' | 'middle' | 'end';
 		labelAnchor?: string;
 		fontSize?: number;
+		mobileFrom?: [number, number];
+		mobileTo?: [number, number];
+		mobileCurve?: number;
+		mobileLabelAnchor?: string;
 	}
 
 	interface Annotations {
@@ -163,7 +167,7 @@
 		];
 	}
 
-	function loadAnnotations(map: maplibregl.Map, ann: Annotations) {
+	function loadAnnotations(map: maplibregl.Map, ann: Annotations, narrow = false) {
 		const ids: string[] = [];
 
 		// Circles
@@ -193,12 +197,15 @@
 
 			for (const a of ann.arrows) {
 				const color = isDark ? a.color : '#222222';
-				const pts = quadraticBezier(a.from, a.to, a.curve);
+				const from = (narrow && a.mobileFrom) ? a.mobileFrom : a.from;
+				const to = (narrow && a.mobileTo) ? a.mobileTo : a.to;
+				const curve = (narrow && a.mobileCurve !== undefined) ? a.mobileCurve : a.curve;
+				const pts = quadraticBezier(from, to, curve);
 				lineFeatures.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: pts }, properties: { color, width: a.width ?? 1.2, opacity: a.opacity ?? 0.5 } });
 				arrowFeatures.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: addArrowhead(pts) }, properties: { color, opacity: a.opacity ?? 0.5 } });
 				if (a.label) {
 					const pos = a.labelPosition === 'end' ? pts[pts.length - 1] : a.labelPosition === 'middle' ? pts[Math.floor(pts.length / 2)] : pts[0];
-					const anchor = a.labelAnchor ?? 'bottom';
+					const anchor = (narrow && a.mobileLabelAnchor) ? a.mobileLabelAnchor : (a.labelAnchor ?? 'bottom');
 					labelFeatures.push({ type: 'Feature', geometry: { type: 'Point', coordinates: pos }, properties: { label: a.label, color, fontSize: a.fontSize ?? 13, anchor } });
 				}
 			}
@@ -425,7 +432,7 @@
 			// Load annotations
 			fetch(`${import.meta.env.BASE_URL}data/annotations.json`)
 				.then(r => r.json())
-				.then((ann: Annotations) => { if (map) loadAnnotations(map, ann); })
+				.then((ann: Annotations) => { if (map) loadAnnotations(map, ann, mapContainer.clientWidth < 800); })
 				.catch(() => {});
 		});
 
@@ -583,7 +590,7 @@
 		border-radius: 50%;
 	}
 
-	:global(.strike-popup .maplibregl-popup-content) {
+:global(.strike-popup .maplibregl-popup-content) {
 		background: var(--surface);
 		color: var(--text);
 		border: 1px solid var(--border);
