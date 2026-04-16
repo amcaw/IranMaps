@@ -46,6 +46,7 @@ var REGIONS = {
 };
 
 function normalizeFilename(attName, layerMap) {
+  if (!attName) return "unknown.zip";
   var lower = attName.toLowerCase().replace(/[^a-z]/g, '');
   for (var key in layerMap) {
     var normalizedKey = key.replace(/[^a-z]/g, '');
