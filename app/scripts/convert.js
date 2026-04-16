@@ -56,11 +56,9 @@ for (const region of REGIONS) {
 
   console.log(`\n[${region}] Converting ${zipFiles.length} shapefiles...`);
 
-  // Group zips by stable name, keeping only the newest zip per name.
-  // Prefer longer filenames as tiebreaker (dated files like
-  // "*_evening_of_april_15_2026.zip" are always longer than stable
-  // names like "us_israeli_strikes_iran.zip") — this handles CI
-  // where git checkout gives all files the same mtime.
+  // Group zips by stable name, keeping the largest file per name.
+  // ISW data is cumulative, so the biggest zip always has the latest data.
+  // This avoids mtime issues on CI where git checkout sets all mtimes equal.
   const newestZipPerName = {};
   for (const zipFile of zipFiles) {
     const rawName = basename(zipFile, '.zip');
@@ -69,33 +67,24 @@ for (const region of REGIONS) {
       console.log(`  Skipped (no mapping): ${rawName}`);
       continue;
     }
-    const mtime = statSync(join(zipsDir, zipFile)).mtimeMs;
+    const size = statSync(join(zipsDir, zipFile)).size;
     const existing = newestZipPerName[stableName];
-    if (!existing || mtime > existing.mtime || (mtime === existing.mtime && zipFile.length > existing.zipFile.length)) {
-      newestZipPerName[stableName] = { zipFile, mtime };
+    if (!existing || size > existing.size) {
+      newestZipPerName[stableName] = { zipFile, size };
     }
   }
 
   const stableNames = new Set(Object.keys(newestZipPerName).map(n => `${n}.geojson`));
 
-  for (const [stableName, { zipFile, mtime: zipMtime }] of Object.entries(newestZipPerName)) {
+  for (const [stableName, { zipFile }] of Object.entries(newestZipPerName)) {
     const outPath = join(geojsonDir, `${stableName}.geojson`);
-
-    // Skip if geojson is newer than the newest zip
-    if (existsSync(outPath)) {
-      const outMtime = statSync(outPath).mtimeMs;
-      if (outMtime > zipMtime) {
-        console.log(`  Up to date: ${stableName}.geojson`);
-        continue;
-      }
-    }
 
     const buffer = readFileSync(join(zipsDir, zipFile));
     const geojson = await shp(buffer);
     const fc = Array.isArray(geojson) ? geojson[0] : geojson;
 
     writeFileSync(outPath, JSON.stringify(fc));
-    console.log(`  Converted: ${stableName}.geojson (${fc.features.length} features)`);
+    console.log(`  Converted: ${stableName}.geojson from ${zipFile} (${fc.features.length} features)`);
   }
 
   // Clean up old/dated geojson files that aren't stable names
