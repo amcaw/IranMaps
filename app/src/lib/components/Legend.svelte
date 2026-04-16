@@ -41,10 +41,10 @@
 			</span>
 			</button>
 		{/each}
-		{#if extra}
-			{@render extra()}
-		{/if}
 	</div>
+	{#if extra}
+		{@render extra()}
+	{/if}
 </div>
 
 <style>
