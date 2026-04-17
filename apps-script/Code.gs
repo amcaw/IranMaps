@@ -318,6 +318,16 @@ function getOrCreateLabel(name) {
   return label;
 }
 
+// ── Reset: clear last-processed dates (run once to force reprocess) ──
+
+function resetProcessedDates() {
+  var props = PropertiesService.getScriptProperties();
+  for (var regionName in REGIONS) {
+    props.deleteProperty("last_date_" + regionName);
+    Logger.log("Cleared last_date_" + regionName);
+  }
+}
+
 // ── Reset: remove processed labels (run once to reprocess) ─────────
 
 function resetProcessedLabel() {
