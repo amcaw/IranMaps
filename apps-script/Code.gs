@@ -142,7 +142,7 @@ function processRegion(regionName, config, token) {
   // Skip if this email's data is not newer than what we last processed
   var lastDateKey = "last_date_" + regionName;
   var lastProcessedDate = PropertiesService.getScriptProperties().getProperty(lastDateKey);
-  if (latestSubjectDate && lastProcessedDate && latestSubjectDate <= lastProcessedDate) {
+  if (latestSubjectDate && lastProcessedDate && latestSubjectDate < lastProcessedDate) {
     Logger.log("[" + regionName + "] Skipping — email date " + latestSubjectDate + " is not newer than last processed " + lastProcessedDate);
     // Still label threads so they don't get picked up again
     for (var t = 0; t < threads.length; t++) {
