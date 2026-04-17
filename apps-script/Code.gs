@@ -104,42 +104,20 @@ function processRegion(regionName, config, token) {
 
   Logger.log("[" + regionName + "] Found " + threads.length + " unprocessed thread(s)");
 
-  // Sort by date extracted from subject (e.g. "April 12, 2026") rather than
-  // message date, because forwarded emails ("TR:") can have a recent date
-  // but contain old attachments. For same-day ties, Evening > Morning > (none).
+  // Pick the thread with the latest subject date; break ties by received time.
   var latestThread = null;
   var latestSubjectDate = null;
-  var latestEditionRank = -1;
 
   for (var t = 0; t < threads.length; t++) {
     var thread = threads[t];
-    var subject = thread.getFirstMessageSubject().toLowerCase();
     var subjectDate = extractSubjectDate(thread.getFirstMessageSubject());
-var editionRank = subject.indexOf('evening') !== -1 ? 2 : subject.indexOf('morning') !== -1 ? 1 : 0;
-    var isNewer = !latestThread;
-    if (subjectDate && latestSubjectDate) {
-      if (subjectDate > latestSubjectDate) {
-        isNewer = true;
-      } else if (subjectDate === latestSubjectDate) {
-        isNewer = editionRank > latestEditionRank;
-      }
-    } else if (subjectDate) {
-      isNewer = true;
-    }
+    var isNewer = !latestThread
+      || (subjectDate && (!latestSubjectDate || subjectDate > latestSubjectDate))
+      || (subjectDate === latestSubjectDate && thread.getLastMessageDate().getTime() > latestThread.getLastMessageDate().getTime());
     if (isNewer) {
       latestSubjectDate = subjectDate;
-      latestEditionRank = editionRank;
       latestThread = thread;
     }
-  }
-
-  // Fallback to most recent thread if no subject dates found
-  if (!latestThread) {
-    threads.sort(function(a, b) {
-      return b.getLastMessageDate().getTime() - a.getLastMessageDate().getTime();
-    });
-    latestThread = threads[0];
-    latestSubjectDate = extractSubjectDate(latestThread.getFirstMessageSubject());
   }
 
   // Skip if this email's data is not newer than what we last processed
