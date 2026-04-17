@@ -44,7 +44,7 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Update GeoJSON and data files"
-            git pull --rebase origin main
+            git pull --rebase -X theirs origin main
             git push
           fi
 
