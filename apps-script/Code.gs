@@ -111,10 +111,22 @@ function processRegion(regionName, config, token) {
   var latestSubjectDate = null;
 
   for (var t = 0; t < threads.length; t++) {
-    var subjectDate = extractSubjectDate(threads[t].getFirstMessageSubject());
-    if (subjectDate && (!latestSubjectDate || subjectDate > latestSubjectDate)) {
+    var thread = threads[t];
+    var subjectDate = extractSubjectDate(thread.getFirstMessageSubject());
+    var isNewer = !latestThread;
+    if (subjectDate && latestSubjectDate) {
+      if (subjectDate > latestSubjectDate) {
+        isNewer = true;
+      } else if (subjectDate === latestSubjectDate) {
+        // Same subject date (e.g. morning vs evening edition) — take the one received later
+        isNewer = thread.getLastMessageDate().getTime() > latestThread.getLastMessageDate().getTime();
+      }
+    } else if (subjectDate) {
+      isNewer = true;
+    }
+    if (isNewer) {
       latestSubjectDate = subjectDate;
-      latestThread = threads[t];
+      latestThread = thread;
     }
   }
 
