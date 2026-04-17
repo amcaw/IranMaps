@@ -106,26 +106,29 @@ function processRegion(regionName, config, token) {
 
   // Sort by date extracted from subject (e.g. "April 12, 2026") rather than
   // message date, because forwarded emails ("TR:") can have a recent date
-  // but contain old attachments.
+  // but contain old attachments. For same-day ties, Evening > Morning > (none).
   var latestThread = null;
   var latestSubjectDate = null;
+  var latestEditionRank = -1;
 
   for (var t = 0; t < threads.length; t++) {
     var thread = threads[t];
+    var subject = thread.getFirstMessageSubject().toLowerCase();
     var subjectDate = extractSubjectDate(thread.getFirstMessageSubject());
+    var editionRank = subject.indexOf('evening') !== -1 ? 2 : subject.indexOf('morning') !== -1 ? 1 : 0;
     var isNewer = !latestThread;
     if (subjectDate && latestSubjectDate) {
       if (subjectDate > latestSubjectDate) {
         isNewer = true;
       } else if (subjectDate === latestSubjectDate) {
-        // Same subject date (e.g. morning vs evening edition) — take the one received later
-        isNewer = thread.getLastMessageDate().getTime() > latestThread.getLastMessageDate().getTime();
+        isNewer = editionRank > latestEditionRank;
       }
     } else if (subjectDate) {
       isNewer = true;
     }
     if (isNewer) {
       latestSubjectDate = subjectDate;
+      latestEditionRank = editionRank;
       latestThread = thread;
     }
   }
