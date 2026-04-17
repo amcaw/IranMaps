@@ -19,7 +19,7 @@ var BRANCH = "main";
 
 var REGIONS = {
   "middle-east": {
-    query: 'subject:"ISW" subject:"Iran Crisis Shapefiles" after:2026/03/01',
+    query: 'subject:"ISW" subject:"Iran" subject:"Shapefiles" after:2026/03/01',
     label: "processed-iran-maps",
     dataPath: "data/middle-east/zips/",
     layerMap: {
