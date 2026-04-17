@@ -115,7 +115,7 @@ function processRegion(regionName, config, token) {
     var thread = threads[t];
     var subject = thread.getFirstMessageSubject().toLowerCase();
     var subjectDate = extractSubjectDate(thread.getFirstMessageSubject());
-    var editionRank = subject.indexOf('evening') !== -1 ? 2 : subject.indexOf('morning') !== -1 ? 1 : 0;
+var editionRank = subject.indexOf('evening') !== -1 ? 2 : subject.indexOf('morning') !== -1 ? 1 : 0;
     var isNewer = !latestThread;
     if (subjectDate && latestSubjectDate) {
       if (subjectDate > latestSubjectDate) {
