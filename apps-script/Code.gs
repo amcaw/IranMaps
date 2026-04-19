@@ -88,18 +88,39 @@ function processNewEmails() {
   var token = PropertiesService.getScriptProperties().getProperty("GITHUB_TOKEN");
   if (!token) throw new Error("GITHUB_TOKEN not set in Script Properties");
 
+  var allFiles = [];
+  var regionLabels = []; // {label, threads} to apply after successful commit
+
   for (var regionName in REGIONS) {
-    processRegion(regionName, REGIONS[regionName], token);
+    var result = collectRegionFiles(regionName, REGIONS[regionName]);
+    if (result) {
+      allFiles = allFiles.concat(result.files);
+      regionLabels.push({ label: result.label, threads: result.threads });
+    }
+  }
+
+  if (allFiles.length > 0) {
+    commitFilesToGitHub(allFiles, "Update shapefiles", token);
+  }
+
+  // Label all processed threads only after the commit succeeds
+  for (var r = 0; r < regionLabels.length; r++) {
+    var threads = regionLabels[r].threads;
+    var label = regionLabels[r].label;
+    for (var t = 0; t < threads.length; t++) {
+      threads[t].addLabel(label);
+    }
+    Logger.log("Labeled " + threads.length + " thread(s) as processed for label " + label.getName());
   }
 }
 
-function processRegion(regionName, config, token) {
+function collectRegionFiles(regionName, config) {
   var label = getOrCreateLabel(config.label);
 
   var threads = GmailApp.search(config.query + ' -label:' + config.label, 0, 50);
   if (threads.length === 0) {
     Logger.log("[" + regionName + "] No new emails");
-    return;
+    return null;
   }
 
   Logger.log("[" + regionName + "] Found " + threads.length + " unprocessed thread(s)");
@@ -129,7 +150,7 @@ function processRegion(regionName, config, token) {
     for (var t = 0; t < threads.length; t++) {
       threads[t].addLabel(label);
     }
-    return;
+    return null;
   }
 
   var messages = latestThread.getMessages();
@@ -193,23 +214,13 @@ function processRegion(regionName, config, token) {
     }
   }
 
-  if (uniqueFiles.length > 0) {
-    commitFilesToGitHub(uniqueFiles, "Update " + regionName + " shapefiles", token);
-  }
-
   // Save last processed date so we don't regress to older data
   if (latestSubjectDate) {
     PropertiesService.getScriptProperties().setProperty(lastDateKey, latestSubjectDate);
   }
 
-  // Label threads only after successful commit (data is cumulative,
-  // so the latest supersedes all older ones — safe to mark all as done).
-  // If commitFilesToGitHub throws, we never reach here and threads
-  // will be reprocessed on the next run.
-  for (var t = 0; t < threads.length; t++) {
-    threads[t].addLabel(label);
-  }
-  Logger.log("[" + regionName + "] Labeled " + threads.length + " thread(s) as processed");
+  Logger.log("[" + regionName + "] Collected " + uniqueFiles.length + " file(s) to commit");
+  return { files: uniqueFiles, label: label, threads: threads };
 }
 
 // ── Commit files to GitHub (overwrites existing) ───────────────────

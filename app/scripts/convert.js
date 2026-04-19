@@ -58,16 +58,25 @@ for (const region of REGIONS) {
 
   console.log(`\n[${region}] Converting ${zipFiles.length} shapefiles...`);
 
-  // Map each zip to its stable name, pick largest if duplicates exist
+  // Map each zip to its stable name.
+  // Prefer exact stable-named zips (e.g. israeli_strikes_lebanon.zip) over
+  // date-stamped variants — stable names are written by the Apps Script and
+  // always reflect the latest data.
+  const stableValues = new Set(Object.values(regionMap));
   const bestZipPerName = {};
   for (const zipFile of zipFiles) {
-    const stableName = normalizeGeoJsonName(basename(zipFile, '.zip'), regionMap);
+    const baseName = basename(zipFile, '.zip');
+    const stableName = normalizeGeoJsonName(baseName, regionMap);
     if (!stableName) {
-      console.log(`  Skipped (no mapping): ${basename(zipFile, '.zip')}`);
+      console.log(`  Skipped (no mapping): ${baseName}`);
       continue;
     }
+    const isStable = stableValues.has(baseName);
     const size = statSync(join(zipsDir, zipFile)).size;
-    if (!bestZipPerName[stableName] || size > bestZipPerName[stableName].size) {
+    const existing = bestZipPerName[stableName];
+    const existingIsStable = existing && stableValues.has(basename(existing.zipFile, '.zip'));
+    // Stable beats date-stamped; among same kind, larger size wins (cumulative data)
+    if (!existing || (!existingIsStable && isStable) || (existingIsStable === isStable && size > existing.size)) {
       bestZipPerName[stableName] = { zipFile, size };
     }
   }
