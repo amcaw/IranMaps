@@ -300,8 +300,10 @@
 			maxBounds: [DATA_BOUNDS[0] - 5, DATA_BOUNDS[1] - 5, DATA_BOUNDS[2] + 5, DATA_BOUNDS[3] + 5],
 			maxZoom: 14,
 			minZoom: 2,
-			cooperativeGestures: true
+			cooperativeGestures: true,
+			attributionControl: false
 		});
+		map.addControl(new maplibregl.AttributionControl({ compact: false, customAttribution: 'MapLibre | &copy; <a href="https://carto.com/">CARTO</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>' }), 'bottom-right');
 
 		const isMobile = window.innerWidth <= 768;
 		const bounds = initialBounds ?? DATA_BOUNDS;
@@ -311,10 +313,6 @@
 		);
 
 		map.addControl(new maplibregl.NavigationControl(), 'top-right');
-
-			// Expand compact attribution by default
-			const attribBtn = mapContainer.querySelector('.maplibregl-ctrl-attrib-button');
-			if (attribBtn) (attribBtn as HTMLElement).click();
 		map.addControl(new maplibregl.ScaleControl({ maxWidth: 150, unit: 'metric' }), 'bottom-right');
 
 		getCurrentBounds = () => {
