@@ -40,7 +40,10 @@ var REGIONS = {
       "assessedrussianadvances": "russian_advances",
       "assessedrussianinfiltration": "russian_infiltration",
       "claimedrussianterritory": "claimed_russian_territory",
-      "claimedukrainiancounteroffensives": "ukrainian_counteroffensives"
+      "claimedukrainiancounteroffensives": "ukrainian_counteroffensives",
+      "kurskincursionrussianadvances": "kursk_russian_advances",
+      "kurskincursionrussianclaims": "kursk_russian_claims",
+      "kurskincursionukrainianadvances": "kursk_ukrainian_advances"
     }
   }
 };

@@ -15,6 +15,9 @@ const LAYERS = [
   { file: 'ukraine_control_map.geojson', id: 'control_map', label: 'Territoires contrôlés par la Russie', color: '#b91c1c', fillColor: '#b91c1c', fillOpacity: 0.15 },
   { file: 'russian_advances.geojson', id: 'russian_advances', label: 'Avancées russes', color: '#dc2626', fillColor: '#dc2626', fillOpacity: 0.3 },
   { file: 'ukrainian_counteroffensives.geojson', id: 'counteroffensives', label: 'Contre-offensives ukrainiennes', color: '#facc15', fillColor: '#facc15', fillOpacity: 0.25 },
+  { file: 'kursk_russian_advances.geojson', id: 'kursk_russian_advances', label: 'Incursion de Koursk – Avancées russes', color: '#7f1d1d', fillColor: '#7f1d1d', fillOpacity: 0.35, optional: true },
+  { file: 'kursk_russian_claims.geojson', id: 'kursk_russian_claims', label: 'Incursion de Koursk – Revendications russes', color: '#991b1b', fillColor: '#991b1b', fillOpacity: 0.2, optional: true },
+  { file: 'kursk_ukrainian_advances.geojson', id: 'kursk_ukrainian_advances', label: 'Incursion de Koursk – Avancées ukrainiennes', color: '#ca8a04', fillColor: '#ca8a04', fillOpacity: 0.35, optional: true },
 ];
 
 function reprojectCoord(x, y) {
@@ -93,8 +96,8 @@ function processLayer(layerDef) {
       .sort();
 
     if (files.length === 0) {
-      console.warn(`  ${layerDef.id}: no file found`);
-      return [];
+      if (!layerDef.optional) console.warn(`  ${layerDef.id}: no file found`);
+      return null;
     }
     filePath = join(DATA_DIR, files[files.length - 1]);
   }
@@ -127,6 +130,7 @@ const layerMeta = [];
 
 for (const layerDef of LAYERS) {
   const result = processLayer(layerDef);
+  if (!result) continue;
   allFeatures.push(...result.features);
   layerMeta.push({
     id: layerDef.id,
