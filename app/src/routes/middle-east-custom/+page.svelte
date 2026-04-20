@@ -16,6 +16,7 @@
 	let showAnnotations = $state(true);
 	let cumulative = $state(true);
 	let lockedBounds: [number, number, number, number] | null = $state(null);
+	let lockedDate: string | null = $state(null);
 	let getCurrentBounds: (() => [number, number, number, number] | null) | null = $state(null);
 	let copied = $state(false);
 
@@ -53,19 +54,23 @@
 
 	function lockView() {
 		if (getCurrentBounds) lockedBounds = getCurrentBounds();
+		lockedDate = selectedDate;
 		copied = false;
 	}
 
 	function resetView() {
 		lockedBounds = null;
+		lockedDate = null;
 		copied = false;
 	}
 
 	let embedCode = $derived.by(() => {
 		const base = 'https://amcaw.github.io/WarMaps/middle-east';
-		const src = lockedBounds
-			? `${base}?bounds=${lockedBounds.join(',')}`
-			: base;
+		const params = new URLSearchParams();
+		if (lockedBounds) params.set('bounds', lockedBounds.join(','));
+		if (lockedDate) params.set('date', lockedDate);
+		const qs = params.toString();
+		const src = qs ? `${base}?${qs}` : base;
 		return `<div data-pym-src="${src}" data-pym-id="warmaps-middle-east"></div>\n\n<script src="https://pym.nprapps.org/pym-loader.v1.js"><\/script>`;
 	});
 
@@ -92,11 +97,11 @@
 			<div class="lock-bar">
 				{#if lockedBounds}
 					<span class="bounds-label">
-						Vue verrouillée : [{lockedBounds.map(n => n.toFixed(2)).join(', ')}]
+						Vue verrouillée · {lockedDate}
 					</span>
 					<button class="btn-reset" onclick={resetView}>Réinitialiser</button>
 				{:else}
-					<span class="hint">Naviguez sur la carte puis verrouillez la vue.</span>
+					<span class="hint">Naviguez et choisissez une date, puis verrouillez.</span>
 					<button class="btn-lock" onclick={lockView}>Verrouiller la vue</button>
 				{/if}
 			</div>

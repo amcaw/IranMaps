@@ -8,19 +8,23 @@
 
 	initPym();
 
-	// Read optional bounds from URL: ?bounds=minLng,minLat,maxLng,maxLat
+	// Read optional params from URL: ?bounds=minLng,minLat,maxLng,maxLat &date=YYYY-MM-DD
 	let initialBounds: [number, number, number, number] | null = $state(null);
+	let lockedDate: string | null = null;
 	onMount(() => {
 		if (window.self === window.top) {
 			document.body.classList.add('standalone');
 		}
-		const raw = new URLSearchParams(window.location.search).get('bounds');
+		const params = new URLSearchParams(window.location.search);
+		const raw = params.get('bounds');
 		if (raw) {
 			const parts = raw.split(',').map(Number);
 			if (parts.length === 4 && parts.every(n => !isNaN(n))) {
 				initialBounds = parts as [number, number, number, number];
 			}
 		}
+		const d = params.get('date');
+		if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) lockedDate = d;
 	});
 
 	let data: StrikeData | null = $state(null);
@@ -60,7 +64,8 @@
 		data = await res.json();
 		if (data) {
 			visibleLayers = new Set(data.meta.layers.map((l) => l.id));
-			selectedIndex = data.meta.dates.length - 1;
+			const lockedIdx = lockedDate ? data.meta.dates.indexOf(lockedDate) : -1;
+			selectedIndex = lockedIdx !== -1 ? lockedIdx : data.meta.dates.length - 1;
 			sendHeight();
 		}
 	});
