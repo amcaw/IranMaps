@@ -219,6 +219,7 @@
 	.embed-panel {
 		border-top: 1px solid var(--border, #e5e7eb);
 		padding: 16px;
+		background: var(--bg);
 	}
 
 	.embed-header {
@@ -235,7 +236,7 @@
 	}
 
 	.btn-copy {
-		background: var(--bg-alt, #f3f4f6);
+		background: var(--surface);
 		border: 1px solid var(--border, #ddd);
 		border-radius: 6px;
 		padding: 4px 12px;
@@ -249,7 +250,7 @@
 	.btn-copy:hover { background: var(--border, #e5e7eb); }
 
 	.embed-code {
-		background: var(--bg-alt, #f9fafb);
+		background: var(--surface);
 		border: 1px solid var(--border, #e5e7eb);
 		border-radius: 6px;
 		padding: 12px;
