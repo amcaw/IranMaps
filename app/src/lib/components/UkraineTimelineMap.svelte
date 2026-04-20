@@ -124,7 +124,7 @@
 				layers: [
 					{ id: 'background', type: 'background', paint: { 'background-color': isDark ? '#0e0e0e' : '#FAFAF8' } },
 					{ id: 'water', type: 'fill', source: 'carto', 'source-layer': 'water', filter: ['==', '$type', 'Polygon'], paint: { 'fill-color': isDark ? '#262626' : '#D4DADC' } },
-					{ id: 'boundary_state', type: 'line', source: 'carto', 'source-layer': 'boundary', filter: ['==', 'admin_level', 2], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-blur': 0.4, 'line-color': isDark ? 'hsl(0, 0%, 21%)' : 'hsl(0, 0%, 65%)', 'line-opacity': 1, 'line-width': ['interpolate', ['exponential', 1.3], ['zoom'], 3, 1, 22, 15] } }
+					{ id: 'boundary_state', type: 'line', source: 'carto', 'source-layer': 'boundary', filter: ['==', 'admin_level', 2], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-blur': 0.4, 'line-color': isDark ? '#ffffff' : '#000000', 'line-opacity': isDark ? 0.5 : 0.6, 'line-width': ['interpolate', ['exponential', 1.3], ['zoom'], 3, 1, 22, 15] } }
 				]
 			},
 			maxZoom: 14,
@@ -276,7 +276,8 @@
 		if (!map || !mapLoaded) return;
 		map.setPaintProperty('background', 'background-color', dark ? '#0e0e0e' : '#FAFAF8');
 		map.setPaintProperty('water', 'fill-color', dark ? '#262626' : '#D4DADC');
-		map.setPaintProperty('boundary_state', 'line-color', dark ? 'hsl(0, 0%, 21%)' : 'hsl(0, 0%, 65%)');
+		map.setPaintProperty('boundary_state', 'line-color', dark ? '#ffffff' : '#000000');
+		map.setPaintProperty('boundary_state', 'line-opacity', dark ? 0.5 : 0.6);
 if (map.getLayer('ukraine-oblasts-line')) map.setPaintProperty('ukraine-oblasts-line', 'line-color', dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)');
 		if (map.getLayer('crimea-hatch-lines')) {
 			map.setPaintProperty('crimea-hatch-lines', 'line-color', dark ? '#dc2626' : '#991b1b');

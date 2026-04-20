@@ -88,16 +88,22 @@
 		return { type: 'FeatureCollection', features };
 	}
 
-	function buildCountryLabelsGeoJSON(): GeoJSON.FeatureCollection {
-		const b = initialBounds;
+	function buildCountryLabelsGeoJSON(m?: maplibregl.Map): GeoJSON.FeatureCollection {
+		// In embed mode (initialBounds set), use live map bounds to clamp labels.
+		// In default mode, use fixed centroids as-is.
+		let b: [number, number, number, number] | null = null;
+		if (initialBounds && m) {
+			const mb = m.getBounds();
+			b = [mb.getWest(), mb.getSouth(), mb.getEast(), mb.getNorth()];
+		}
 
 		return {
 			type: 'FeatureCollection',
 			features: COUNTRY_LABELS
 				.filter(c => {
 					if (!b) return true;
-					// Only include labels whose centroid is within the viewport bounds
-					// or within half the viewport width/height beyond each edge
+					// Include only countries whose centroid is within
+					// half the viewport dimensions beyond each edge
 					const hw = (b[2] - b[0]) / 2;
 					const hh = (b[3] - b[1]) / 2;
 					return c.lng >= b[0] - hw && c.lng <= b[2] + hw &&
@@ -283,26 +289,14 @@
 	}
 
 	onMount(() => {
-		const tileVariant = isDark ? 'dark_nolabels' : 'light_nolabels';
+		const cartoStyle = isDark
+			? 'https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json'
+			: 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json';
 
 		// Main map
 		map = new maplibregl.Map({
 			container: mapContainer,
-			style: {
-				version: 8,
-				sources: {
-					'carto-basemap': {
-						type: 'raster',
-						tiles: [
-							`https://a.basemaps.cartocdn.com/${tileVariant}/{z}/{x}/{y}@2x.png`,
-							`https://b.basemaps.cartocdn.com/${tileVariant}/{z}/{x}/{y}@2x.png`,
-						],
-						tileSize: 256,
-						attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
-					}
-				},
-				layers: [{ id: 'carto-basemap', type: 'raster', source: 'carto-basemap' }]
-			},
+			style: cartoStyle,
 			maxBounds: [DATA_BOUNDS[0] - 5, DATA_BOUNDS[1] - 5, DATA_BOUNDS[2] + 5, DATA_BOUNDS[3] + 5],
 			maxZoom: 14,
 			minZoom: 2,
@@ -335,11 +329,28 @@
 		};
 
 		map.on('load', () => {
+			// Restyle country borders from CartoDB vector style
+			if (map?.getLayer('boundary_country_inner')) {
+				map.setPaintProperty('boundary_country_inner', 'line-color', isDark ? '#ffffff' : '#000000');
+				map.setPaintProperty('boundary_country_inner', 'line-opacity', isDark ? 0.5 : 0.6);
+				map.setPaintProperty('boundary_country_inner', 'line-width', 1);
+			}
+			if (map?.getLayer('boundary_country_outline')) {
+				map.setPaintProperty('boundary_country_outline', 'line-opacity', 0);
+			}
+
 			// Country labels
 			map!.addSource('country-labels', {
 				type: 'geojson',
-				data: buildCountryLabelsGeoJSON()
+				data: buildCountryLabelsGeoJSON(map!)
 			});
+
+			if (initialBounds) {
+				map!.on('moveend', () => {
+					const src = map?.getSource('country-labels') as maplibregl.GeoJSONSource | undefined;
+					src?.setData(buildCountryLabelsGeoJSON(map!));
+				});
+			}
 
 			map!.addLayer({
 				id: 'country-labels-text',
@@ -361,6 +372,7 @@
 				}
 			});
 
+			// Country borders
 			// Strike points
 			const geojson = buildGeoJSON(selectedDate, visibleLayers);
 
@@ -482,7 +494,7 @@
 					'carto-mini': {
 						type: 'raster',
 						tiles: [
-							`https://a.basemaps.cartocdn.com/${tileVariant}/{z}/{x}/{y}.png`,
+							`https://a.basemaps.cartocdn.com/${isDark ? 'dark_nolabels' : 'light_nolabels'}/{z}/{x}/{y}.png`,
 						],
 						tileSize: 256
 					}
@@ -539,14 +551,22 @@
 	$effect(() => {
 		const dark = isDark;
 		if (!map || !map.isStyleLoaded()) return;
-		// Basemap tiles
-		const tileVariant = dark ? 'dark_nolabels' : 'light_nolabels';
-		if (map.getSource('carto-basemap')) {
-			(map.getSource('carto-basemap') as any).setTiles([
-				`https://a.basemaps.cartocdn.com/${tileVariant}/{z}/{x}/{y}@2x.png`,
-				`https://b.basemaps.cartocdn.com/${tileVariant}/{z}/{x}/{y}@2x.png`,
-			]);
-		}
+		// Swap vector basemap style
+		const newStyle = dark
+			? 'https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json'
+			: 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json';
+		map.setStyle(newStyle);
+		// Re-apply border color after style reloads (our layers are wiped on setStyle)
+		map.once('styledata', () => {
+			if (map?.getLayer('boundary_country_inner')) {
+				map.setPaintProperty('boundary_country_inner', 'line-color', dark ? '#ffffff' : '#000000');
+				map.setPaintProperty('boundary_country_inner', 'line-opacity', dark ? 0.5 : 0.6);
+				map.setPaintProperty('boundary_country_inner', 'line-width', 1);
+			}
+			if (map?.getLayer('boundary_country_outline')) {
+				map.setPaintProperty('boundary_country_outline', 'line-opacity', 0);
+			}
+		});
 		// Country labels
 		if (map.getLayer('country-labels-text')) {
 			map.setPaintProperty('country-labels-text', 'text-color', dark ? '#777' : '#999');
@@ -558,7 +578,7 @@
 		}
 		// Mini map tiles
 		if (miniMap?.getSource('carto-mini')) {
-			(miniMap.getSource('carto-mini') as any).setTiles([`https://a.basemaps.cartocdn.com/${tileVariant}/{z}/{x}/{y}.png`]);
+			(miniMap.getSource('carto-mini') as any).setTiles([`https://a.basemaps.cartocdn.com/${dark ? 'dark_nolabels' : 'light_nolabels'}/{z}/{x}/{y}.png`]);
 		}
 	});
 
