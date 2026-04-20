@@ -89,22 +89,34 @@
 	}
 
 	function buildCountryLabelsGeoJSON(): GeoJSON.FeatureCollection {
-		// When a custom viewport is set, only include labels whose centroid
-		// falls within the bounds (with a small margin).
 		const b = initialBounds;
-		const margin = 3;
+
 		return {
 			type: 'FeatureCollection',
 			features: COUNTRY_LABELS
-				.filter(c => !b || (
-					c.lng >= b[0] - margin && c.lng <= b[2] + margin &&
-					c.lat >= b[1] - margin && c.lat <= b[3] + margin
-				))
-				.map(c => ({
-					type: 'Feature' as const,
-					geometry: { type: 'Point' as const, coordinates: [c.lng, c.lat] },
-					properties: { name: c.name }
-				}))
+				.filter(c => {
+					if (!b) return true;
+					// Only include labels whose centroid is within the viewport bounds
+					// or within half the viewport width/height beyond each edge
+					const hw = (b[2] - b[0]) / 2;
+					const hh = (b[3] - b[1]) / 2;
+					return c.lng >= b[0] - hw && c.lng <= b[2] + hw &&
+					       c.lat >= b[1] - hh && c.lat <= b[3] + hh;
+				})
+				.map(c => {
+					let lng = c.lng;
+					let lat = c.lat;
+					if (b) {
+						const pad = 0.8;
+						lng = Math.max(b[0] + pad, Math.min(b[2] - pad, lng));
+						lat = Math.max(b[1] + pad, Math.min(b[3] - pad, lat));
+					}
+					return {
+						type: 'Feature' as const,
+						geometry: { type: 'Point' as const, coordinates: [lng, lat] },
+						properties: { name: c.name }
+					};
+				})
 		};
 	}
 
