@@ -16,7 +16,6 @@
 	let showAnnotations = $state(true);
 	let cumulative = $state(true);
 	let lockedBounds: [number, number, number, number] | null = $state(null);
-	let lockedDate: string | null = $state(null);
 	let getCurrentBounds: (() => [number, number, number, number] | null) | null = $state(null);
 	let copied = $state(false);
 
@@ -52,19 +51,13 @@
 		}
 	});
 
-	let lockedCumulative: boolean | null = $state(null);
-
 	function lockView() {
 		if (getCurrentBounds) lockedBounds = getCurrentBounds();
-		lockedDate = selectedDate;
-		lockedCumulative = cumulative;
 		copied = false;
 	}
 
 	function resetView() {
 		lockedBounds = null;
-		lockedDate = null;
-		lockedCumulative = null;
 		copied = false;
 	}
 
@@ -72,10 +65,9 @@
 		const base = 'https://amcaw.github.io/WarMaps/middle-east';
 		const params = new URLSearchParams();
 		if (lockedBounds) params.set('bounds', lockedBounds.join(','));
-		if (lockedDate) params.set('date', lockedDate);
-		if (lockedCumulative !== null) params.set('cumulative', String(lockedCumulative));
-		const qs = params.toString();
-		const src = qs ? `${base}?${qs}` : base;
+		if (selectedDate) params.set('date', selectedDate);
+		params.set('cumulative', String(cumulative));
+		const src = `${base}?${params.toString()}`;
 		return `<div data-pym-src="${src}" data-pym-id="warmaps-middle-east"></div>\n\n<script src="https://pym.nprapps.org/pym-loader.v1.js"><\/script>`;
 	});
 
@@ -102,7 +94,7 @@
 			<div class="lock-bar">
 				{#if lockedBounds}
 					<span class="bounds-label">
-						Vue verrouillée · {lockedDate} · {lockedCumulative ? 'cumulatif' : 'jour par jour'}
+						Vue verrouillée · {selectedDate} · {cumulative ? 'cumulatif' : 'jour par jour'}
 					</span>
 					<button class="btn-reset" onclick={resetView}>Réinitialiser</button>
 				{:else}
