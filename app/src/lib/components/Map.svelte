@@ -4,8 +4,6 @@
 	import type { StrikeData, LayerMeta } from '$lib/types';
 	import { t } from '$lib/i18n';
 	import { isDarkStore } from '$lib/theme';
-	import { feature } from 'topojson-client';
-	import worldAtlas from 'world-atlas/countries-110m.json';
 
 	let {
 		data,
@@ -43,78 +41,26 @@
 	// Bounding box from the data (with padding)
 	const DATA_BOUNDS: [number, number, number, number] = [28, 18, 66, 42];
 
-	// Country labels: name + ISO numeric ID (from world-atlas)
-	const COUNTRY_LABELS: { name: string; id: number }[] = [
-		{ name: 'Iran', id: 364 },
-		{ name: 'Irak', id: 368 },
-		{ name: 'Liban', id: 422 },
-		{ name: 'Syrie', id: 760 },
-		{ name: 'Turquie', id: 792 },
-		{ name: 'Arabie\nSaoudite', id: 682 },
-		{ name: 'Israël', id: 376 },
-		{ name: 'Jordanie', id: 400 },
-		{ name: 'Koweït', id: 414 },
-		{ name: 'Bahreïn', id: 48 },
-		{ name: 'Qatar', id: 634 },
-		{ name: 'É.A.U.', id: 784 },
-		{ name: 'Oman', id: 512 },
-		{ name: 'Pakistan', id: 586 },
-		{ name: 'Afghanistan', id: 4 },
-		{ name: 'Égypte', id: 818 },
-		{ name: 'Yémen', id: 887 },
+	// Country labels in French with approximate centroids
+	const COUNTRY_LABELS: { name: string; lng: number; lat: number }[] = [
+		{ name: 'Iran', lng: 53.5, lat: 32.5 },
+		{ name: 'Irak', lng: 43.5, lat: 33.2 },
+		{ name: 'Liban', lng: 35.9, lat: 33.9 },
+		{ name: 'Syrie', lng: 38.5, lat: 35.0 },
+		{ name: 'Turquie', lng: 35.0, lat: 39.0 },
+		{ name: 'Arabie\nSaoudite', lng: 45.0, lat: 24.0 },
+		{ name: 'Israël', lng: 34.8, lat: 31.5 },
+		{ name: 'Jordanie', lng: 36.5, lat: 31.2 },
+		{ name: 'Koweït', lng: 47.5, lat: 29.3 },
+		{ name: 'Bahreïn', lng: 50.5, lat: 26.1 },
+		{ name: 'Qatar', lng: 51.2, lat: 25.3 },
+		{ name: 'É.A.U.', lng: 54.5, lat: 24.0 },
+		{ name: 'Oman', lng: 57.0, lat: 21.5 },
+		{ name: 'Pakistan', lng: 63.0, lat: 28.0 },
+		{ name: 'Afghanistan', lng: 65.0, lat: 34.0 },
+		{ name: 'Égypte', lng: 30.0, lat: 27.0 },
+		{ name: 'Yémen', lng: 48.0, lat: 15.5 },
 	];
-
-	// Pre-extract country polygons from world-atlas (rings only, flattened)
-	type Ring = [number, number][];
-	const COUNTRY_RINGS: Map<number, Ring[]> = (() => {
-		const fc = feature(worldAtlas as any, (worldAtlas as any).objects.countries);
-		const map = new Map<number, Ring[]>();
-		const ids = new Set(COUNTRY_LABELS.map(c => c.id));
-		for (const f of (fc as any).features) {
-			const id = Number(f.id);
-			if (!ids.has(id)) continue;
-			const rings: Ring[] = [];
-			const geom = f.geometry;
-			if (geom.type === 'Polygon') {
-				rings.push(geom.coordinates[0]);
-			} else if (geom.type === 'MultiPolygon') {
-				for (const poly of geom.coordinates) rings.push(poly[0]);
-			}
-			map.set(id, rings);
-		}
-		return map;
-	})();
-
-	// Sutherland-Hodgman polygon clipping against an axis-aligned rectangle
-	function clipRingToRect(ring: Ring, b: [number,number,number,number]): Ring {
-		const [w, s, e, n] = b;
-		let pts: Ring = ring;
-		const edges: [(p:[number,number])=>boolean, (a:[number,number],b:[number,number])=>[number,number]][] = [
-			[p => p[0] >= w, (a,b) => { const t=(w-a[0])/(b[0]-a[0]); return [w, a[1]+t*(b[1]-a[1])]; }],
-			[p => p[0] <= e, (a,b) => { const t=(e-a[0])/(b[0]-a[0]); return [e, a[1]+t*(b[1]-a[1])]; }],
-			[p => p[1] >= s, (a,b) => { const t=(s-a[1])/(b[1]-a[1]); return [a[0]+t*(b[0]-a[0]), s]; }],
-			[p => p[1] <= n, (a,b) => { const t=(n-a[1])/(b[1]-a[1]); return [a[0]+t*(b[0]-a[0]), n]; }],
-		];
-		for (const [inside, intersect] of edges) {
-			if (!pts.length) break;
-			const out: Ring = [];
-			for (let i = 0; i < pts.length; i++) {
-				const cur = pts[i], prev = pts[(i + pts.length - 1) % pts.length];
-				const ci = inside(cur), pi = inside(prev);
-				if (ci) { if (!pi) out.push(intersect(prev, cur)); out.push(cur); }
-				else if (pi) out.push(intersect(prev, cur));
-			}
-			pts = out;
-		}
-		return pts;
-	}
-
-	function ringCentroid(ring: Ring): [number, number] | null {
-		if (!ring.length) return null;
-		let x = 0, y = 0;
-		for (const [lng, lat] of ring) { x += lng; y += lat; }
-		return [x / ring.length, y / ring.length];
-	}
 
 	function buildGeoJSON(date: string, visible: Set<string>): GeoJSON.FeatureCollection {
 		const features: GeoJSON.Feature[] = [];
@@ -142,47 +88,15 @@
 		return { type: 'FeatureCollection', features };
 	}
 
-	function buildCountryLabelsGeoJSON(m?: maplibregl.Map): GeoJSON.FeatureCollection {
-		// Without a map (or no initialBounds), compute plain centroids from polygons
-		let b: [number, number, number, number] | null = null;
-		if (initialBounds && m) {
-			const mb = m.getBounds();
-			b = [mb.getWest(), mb.getSouth(), mb.getEast(), mb.getNorth()];
-		}
-
-		const features: GeoJSON.Feature[] = [];
-
-		for (const country of COUNTRY_LABELS) {
-			const rings = COUNTRY_RINGS.get(country.id);
-			if (!rings) continue;
-
-			if (!b) {
-				// Default view: use centroid of largest ring
-				const largest = rings.reduce((a, r) => r.length > a.length ? r : a, rings[0]);
-				const c = ringCentroid(largest);
-				if (c) features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: c }, properties: { name: country.name } });
-				continue;
-			}
-
-			// Embed view: clip each ring to viewport, find largest clipped area, use its centroid
-			let bestCentroid: [number, number] | null = null;
-			let bestLen = 0;
-
-			for (const ring of rings) {
-				const clipped = clipRingToRect(ring as [number,number][], b);
-				if (clipped.length > bestLen) {
-					bestLen = clipped.length;
-					bestCentroid = ringCentroid(clipped);
-				}
-			}
-
-			// Only show label if meaningful clipped area exists
-			if (bestCentroid && bestLen >= 3) {
-				features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: bestCentroid }, properties: { name: country.name } });
-			}
-		}
-
-		return { type: 'FeatureCollection', features };
+	function buildCountryLabelsGeoJSON(): GeoJSON.FeatureCollection {
+		return {
+			type: 'FeatureCollection',
+			features: COUNTRY_LABELS.map(c => ({
+				type: 'Feature' as const,
+				geometry: { type: 'Point' as const, coordinates: [c.lng, c.lat] },
+				properties: { name: c.name }
+			}))
+		};
 	}
 
 	function getColorExpression(layers: LayerMeta[]): maplibregl.ExpressionSpecification {
@@ -399,15 +313,9 @@
 			// Country labels
 			map!.addSource('country-labels', {
 				type: 'geojson',
-				data: buildCountryLabelsGeoJSON(map!)
+				data: buildCountryLabelsGeoJSON()
 			});
 
-			if (initialBounds) {
-				map!.on('moveend', () => {
-					const src = map?.getSource('country-labels') as maplibregl.GeoJSONSource | undefined;
-					src?.setData(buildCountryLabelsGeoJSON(map!));
-				});
-			}
 
 			map!.addLayer({
 				id: 'country-labels-text',
