@@ -36,15 +36,32 @@ jobs:
         run: npm run data
 
       - name: Commit all changes
+        id: commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/middle-east/geojson/*.geojson data/ukraine/geojson/*.geojson app/static/data/strikes.json app/static/data/ukraine.json
           if git diff --staged --quiet; then
             echo "No changes to commit"
+            echo "changed=false" >> $GITHUB_OUTPUT
           else
             git commit -m "Update GeoJSON and data files"
             git pull --rebase -X theirs origin main
             git push
+            echo "changed=true" >> $GITHUB_OUTPUT
           fi
+
+      - name: Build
+        if: steps.commit.outputs.changed == 'true'
+        working-directory: app
+        env:
+          BASE_PATH: ${{ github.event.repository.name }}
+        run: npm run build
+
+      - name: Deploy to gh-pages branch
+        if: steps.commit.outputs.changed == 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./app/build
 
