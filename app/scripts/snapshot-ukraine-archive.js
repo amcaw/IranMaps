@@ -4,6 +4,14 @@
  * and writes a dated GeoJSON to app/static/data/ukraine-archive/YYYY-MM-DD.geojson,
  * then updates manifest.json.
  *
+ * Maintains consistency with Le Monde archive layer IDs:
+ *   control_map            ← control_map (same)
+ *   russian_advances       ← russian_advances (same)
+ *   kursk_ukrainian_advance ← kursk_ukrainian_advances (remapped, singular Le Monde ID)
+ *
+ * All other ISW layers (counteroffensives, kursk_russian_*) are excluded
+ * so the timeline legend stays consistent across all dates.
+ *
  * Run after preprocess-ukraine.js. Called weekly by the GitHub Action.
  * Pass --date YYYY-MM-DD to override today's date (for backfilling).
  */
@@ -16,15 +24,13 @@ const ARCHIVE_DIR = join(DATA_DIR, 'ukraine-archive');
 const UKRAINE_JSON = join(DATA_DIR, 'ukraine.json');
 const MANIFEST_PATH = join(ARCHIVE_DIR, 'manifest.json');
 
-// Layers to include in the archive (subset of what preprocess-ukraine produces)
-const ARCHIVE_LAYERS = [
-  { id: 'control_map',              label: 'Territoires contrôlés par la Russie',       color: '#b91c1c', fillColor: '#b91c1c', fillOpacity: 0.15 },
-  { id: 'russian_advances',         label: 'Avancées russes',                            color: '#dc2626', fillColor: '#dc2626', fillOpacity: 0.3  },
-  { id: 'counteroffensives',        label: 'Contre-offensives ukrainiennes',             color: '#facc15', fillColor: '#facc15', fillOpacity: 0.25 },
-  { id: 'kursk_russian_advances',   label: 'Incursion de Koursk – Avancées russes',     color: '#7f1d1d', fillColor: '#7f1d1d', fillOpacity: 0.35, optional: true },
-  { id: 'kursk_russian_claims',     label: 'Incursion de Koursk – Revendications russes', color: '#991b1b', fillColor: '#991b1b', fillOpacity: 0.2, optional: true },
-  { id: 'kursk_ukrainian_advances', label: 'Incursion de Koursk – Avancées ukrainiennes', color: '#ca8a04', fillColor: '#ca8a04', fillOpacity: 0.35, optional: true },
-];
+// Maps ISW layer IDs → Le Monde archive layer IDs.
+// Only these layers are written to the archive.
+const LAYER_MAP = {
+  'control_map':           'control_map',
+  'russian_advances':      'russian_advances',
+  'kursk_ukrainian_advances': 'kursk_ukrainian_advance', // remap to Le Monde singular ID
+};
 
 // Determine snapshot date
 const dateArgIndex = process.argv.indexOf('--date');
@@ -32,7 +38,6 @@ const dateArg = process.argv.find(a => a.startsWith('--date='))?.slice(7)
   || (dateArgIndex !== -1 ? process.argv[dateArgIndex + 1] : null);
 const today = dateArg || new Date().toISOString().slice(0, 10);
 
-// Validate date format
 if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) {
   console.error(`Invalid date: ${today}`);
   process.exit(1);
@@ -45,38 +50,28 @@ if (existsSync(outPath)) {
 } else {
   const ukraine = JSON.parse(readFileSync(UKRAINE_JSON, 'utf-8'));
 
-  // Collect features for archive layers that are present in the data
-  const archiveLayerIds = new Set(ARCHIVE_LAYERS.map(l => l.id));
-  const features = ukraine.features.filter(f => archiveLayerIds.has(f.properties?.layer));
+  const features = [];
+  for (const f of ukraine.features) {
+    const archiveId = LAYER_MAP[f.properties?.layer];
+    if (!archiveId) continue;
+    features.push({
+      type: 'Feature',
+      geometry: f.geometry,
+      properties: { layer: archiveId },
+    });
+  }
 
-  const geojson = { type: 'FeatureCollection', features };
-  writeFileSync(outPath, JSON.stringify(geojson));
+  writeFileSync(outPath, JSON.stringify({ type: 'FeatureCollection', features }));
   console.log(`Snapshot written: ${today}.geojson (${features.length} features)`);
 }
 
-// Update manifest — merge existing dates with new one, keep sorted, deduplicate
+// Update manifest — merge new date, keep sorted, no layer changes (Le Monde layers are authoritative)
 const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf-8'));
 
 if (!manifest.dates.includes(today)) {
   manifest.dates = [...manifest.dates, today].sort();
+  writeFileSync(MANIFEST_PATH, JSON.stringify(manifest));
+  console.log(`Manifest updated: ${manifest.dates.length} dates`);
+} else {
+  console.log(`Date ${today} already in manifest`);
 }
-
-// Update layer definitions to reflect current archive layers
-// Only include layers that appear in at least one archive entry
-const presentLayerIds = new Set();
-const snapshot = JSON.parse(readFileSync(outPath, 'utf-8'));
-for (const f of snapshot.features) {
-  if (f.properties?.layer) presentLayerIds.add(f.properties.layer);
-}
-
-// Keep existing layers from Le Monde era + add new ISW layers that are present
-const existingIds = new Set(manifest.layers.map(l => l.id));
-for (const layerDef of ARCHIVE_LAYERS) {
-  if (!existingIds.has(layerDef.id) && presentLayerIds.has(layerDef.id)) {
-    manifest.layers.push({ id: layerDef.id, label: layerDef.label, color: layerDef.color, fillColor: layerDef.fillColor, fillOpacity: layerDef.fillOpacity });
-    existingIds.add(layerDef.id);
-  }
-}
-
-writeFileSync(MANIFEST_PATH, JSON.stringify(manifest));
-console.log(`Manifest updated: ${manifest.dates.length} dates, ${manifest.layers.length} layers`);
