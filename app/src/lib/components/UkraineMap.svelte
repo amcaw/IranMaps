@@ -124,7 +124,7 @@
 
 		map.addControl(new maplibregl.NavigationControl(), 'top-right');
 		map.addControl(new maplibregl.ScaleControl({ maxWidth: 150, unit: 'metric' }), 'bottom-right');
-		map.addControl(new maplibregl.AttributionControl({ compact: false, customAttribution: 'MapLibre | &copy; <a href="https://carto.com/">CARTO</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>' }), 'bottom-right');
+		map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: 'MapLibre | &copy; <a href="https://carto.com/">CARTO</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>' }), 'bottom-right');
 
 		// Fit bbox to container, choosing the tighter dimension
 		const ro = new ResizeObserver(() => {

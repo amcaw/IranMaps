@@ -303,7 +303,7 @@
 			cooperativeGestures: true,
 			attributionControl: false
 		});
-		map.addControl(new maplibregl.AttributionControl({ compact: false, customAttribution: 'MapLibre | &copy; <a href="https://carto.com/">CARTO</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>' }), 'bottom-right');
+		map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: 'MapLibre | &copy; <a href="https://carto.com/">CARTO</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>' }), 'bottom-right');
 
 		const isMobile = window.innerWidth <= 768;
 		const bounds = initialBounds ?? DATA_BOUNDS;
