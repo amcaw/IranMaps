@@ -52,15 +52,19 @@
 		}
 	});
 
+	let lockedCumulative: boolean | null = $state(null);
+
 	function lockView() {
 		if (getCurrentBounds) lockedBounds = getCurrentBounds();
 		lockedDate = selectedDate;
+		lockedCumulative = cumulative;
 		copied = false;
 	}
 
 	function resetView() {
 		lockedBounds = null;
 		lockedDate = null;
+		lockedCumulative = null;
 		copied = false;
 	}
 
@@ -69,6 +73,7 @@
 		const params = new URLSearchParams();
 		if (lockedBounds) params.set('bounds', lockedBounds.join(','));
 		if (lockedDate) params.set('date', lockedDate);
+		if (lockedCumulative !== null) params.set('cumulative', String(lockedCumulative));
 		const qs = params.toString();
 		const src = qs ? `${base}?${qs}` : base;
 		return `<div data-pym-src="${src}" data-pym-id="warmaps-middle-east"></div>\n\n<script src="https://pym.nprapps.org/pym-loader.v1.js"><\/script>`;
@@ -97,11 +102,11 @@
 			<div class="lock-bar">
 				{#if lockedBounds}
 					<span class="bounds-label">
-						Vue verrouillée · {lockedDate}
+						Vue verrouillée · {lockedDate} · {lockedCumulative ? 'cumulatif' : 'jour par jour'}
 					</span>
 					<button class="btn-reset" onclick={resetView}>Réinitialiser</button>
 				{:else}
-					<span class="hint">Naviguez et choisissez une date, puis verrouillez.</span>
+					<span class="hint">Naviguez, choisissez une date et un mode, puis verrouillez.</span>
 					<button class="btn-lock" onclick={lockView}>Verrouiller la vue</button>
 				{/if}
 			</div>

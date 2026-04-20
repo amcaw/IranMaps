@@ -25,6 +25,8 @@
 		}
 		const d = params.get('date');
 		if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) lockedDate = d;
+		const c = params.get('cumulative');
+		if (c !== null) cumulative = c !== 'false';
 	});
 
 	let data: StrikeData | null = $state(null);
