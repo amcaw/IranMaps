@@ -58,13 +58,13 @@
 		column-gap: 16px;
 	}
 
-	@media (max-width: 1024px) {
+	@media (max-width: 1200px) {
 		.layers {
 			columns: 2;
 		}
 	}
 
-	@media (max-width: 640px) {
+	@media (max-width: 800px) {
 		.layers {
 			columns: 1;
 		}
