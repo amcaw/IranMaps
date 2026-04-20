@@ -10,13 +10,17 @@
 		selectedDate,
 		visibleLayers,
 		showAnnotations,
-		cumulative
+		cumulative,
+		initialBounds = null,
+		getCurrentBounds = $bindable(null)
 	}: {
 		data: StrikeData;
 		selectedDate: string;
 		visibleLayers: Set<string>;
 		showAnnotations: boolean;
 		cumulative: boolean;
+		initialBounds?: [number, number, number, number] | null;
+		getCurrentBounds?: (() => [number, number, number, number] | null) | null;
 	} = $props();
 
 	let mapContainer: HTMLDivElement;
@@ -285,8 +289,9 @@
 		});
 
 		const isMobile = window.innerWidth <= 768;
+		const bounds = initialBounds ?? DATA_BOUNDS;
 		map.fitBounds(
-			[[DATA_BOUNDS[0], DATA_BOUNDS[1]], [DATA_BOUNDS[2], DATA_BOUNDS[3]]],
+			[[bounds[0], bounds[1]], [bounds[2], bounds[3]]],
 			{ padding: isMobile ? 10 : 40 }
 		);
 
@@ -296,6 +301,17 @@
 			const attribBtn = mapContainer.querySelector('.maplibregl-ctrl-attrib-button');
 			if (attribBtn) (attribBtn as HTMLElement).click();
 		map.addControl(new maplibregl.ScaleControl({ maxWidth: 150, unit: 'metric' }), 'bottom-right');
+
+		getCurrentBounds = () => {
+			if (!map) return null;
+			const b = map.getBounds();
+			return [
+				Math.round(b.getWest() * 1000) / 1000,
+				Math.round(b.getSouth() * 1000) / 1000,
+				Math.round(b.getEast() * 1000) / 1000,
+				Math.round(b.getNorth() * 1000) / 1000
+			];
+		};
 
 		map.on('load', () => {
 			// Country labels

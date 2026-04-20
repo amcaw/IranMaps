@@ -8,9 +8,18 @@
 
 	initPym();
 
+	// Read optional bounds from URL: ?bounds=minLng,minLat,maxLng,maxLat
+	let initialBounds: [number, number, number, number] | null = $state(null);
 	onMount(() => {
 		if (window.self === window.top) {
 			document.body.classList.add('standalone');
+		}
+		const raw = new URLSearchParams(window.location.search).get('bounds');
+		if (raw) {
+			const parts = raw.split(',').map(Number);
+			if (parts.length === 4 && parts.every(n => !isNaN(n))) {
+				initialBounds = parts as [number, number, number, number];
+			}
 		}
 	});
 
@@ -65,7 +74,7 @@
 			{countsByLayer}
 		/>
 		<div class="map-frame">
-			<Map {data} {selectedDate} {visibleLayers} {showAnnotations} {cumulative} />
+			<Map {data} {selectedDate} {visibleLayers} {showAnnotations} {cumulative} {initialBounds} />
 		</div>
 		<Timeline
 			dates={data.meta.dates}
