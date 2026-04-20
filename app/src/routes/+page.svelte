@@ -13,6 +13,10 @@
 			<span class="card-title">Ukraine (timelapse)</span>
 			<span class="card-desc">Évolution du front depuis fév. 2022</span>
 		</a>
+		<a class="map-card map-card--tool" href="middle-east-custom">
+			<span class="card-title">Moyen-Orient – Personnaliser</span>
+			<span class="card-desc">Choisir une vue et générer un code d'intégration</span>
+		</a>
 	</div>
 </div>
 
@@ -58,6 +62,11 @@
 
 	.map-card:hover {
 		border-color: var(--accent);
+	}
+
+	.map-card--tool {
+		border-style: dashed;
+		opacity: 0.8;
 	}
 
 	.card-title {
