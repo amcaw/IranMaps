@@ -88,14 +88,42 @@
 		return { type: 'FeatureCollection', features };
 	}
 
-	function buildCountryLabelsGeoJSON(): GeoJSON.FeatureCollection {
+	function buildCountryLabelsGeoJSON(m?: maplibregl.Map): GeoJSON.FeatureCollection {
+		// If a map is provided, clamp each centroid to the current viewport
+		// (with padding) so labels stay visible when zoomed/panned.
+		let bounds: maplibregl.LngLatBounds | null = null;
+		if (m) {
+			bounds = m.getBounds();
+		}
+
 		return {
 			type: 'FeatureCollection',
-			features: COUNTRY_LABELS.map(c => ({
-				type: 'Feature' as const,
-				geometry: { type: 'Point' as const, coordinates: [c.lng, c.lat] },
-				properties: { name: c.name }
-			}))
+			features: COUNTRY_LABELS.map(c => {
+				let lng = c.lng;
+				let lat = c.lat;
+				if (bounds) {
+					const pad = 1.5; // degrees of inset from edge
+					const w = bounds.getWest() + pad;
+					const e = bounds.getEast() - pad;
+					const s = bounds.getSouth() + pad;
+					const n = bounds.getNorth() - pad;
+					// Only show label if centroid is near the viewport
+					const nearW = bounds.getWest() - 15;
+					const nearE = bounds.getEast() + 15;
+					const nearS = bounds.getSouth() - 10;
+					const nearN = bounds.getNorth() + 10;
+					if (c.lng < nearW || c.lng > nearE || c.lat < nearS || c.lat > nearN) {
+						return null;
+					}
+					lng = Math.max(w, Math.min(e, lng));
+					lat = Math.max(s, Math.min(n, lat));
+				}
+				return {
+					type: 'Feature' as const,
+					geometry: { type: 'Point' as const, coordinates: [lng, lat] },
+					properties: { name: c.name }
+				};
+			}).filter(Boolean) as GeoJSON.Feature[]
 		};
 	}
 
@@ -317,7 +345,12 @@
 			// Country labels
 			map!.addSource('country-labels', {
 				type: 'geojson',
-				data: buildCountryLabelsGeoJSON()
+				data: buildCountryLabelsGeoJSON(map!)
+			});
+
+			map!.on('moveend', () => {
+				const src = map?.getSource('country-labels') as maplibregl.GeoJSONSource | undefined;
+				src?.setData(buildCountryLabelsGeoJSON(map!));
 			});
 
 			map!.addLayer({
