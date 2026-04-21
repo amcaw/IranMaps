@@ -136,7 +136,9 @@
 		map.addControl(new maplibregl.NavigationControl(), 'top-right');
 		map.addControl(new maplibregl.ScaleControl({ maxWidth: 150, unit: 'metric' }), 'bottom-right');
 		map.addControl(new maplibregl.AttributionControl({ customAttribution: 'MapLibre | &copy; <a href="https://carto.com/">CARTO</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>' }), 'bottom-right');
-		mapContainer.querySelector('.maplibregl-ctrl-attrib')?.classList.add('maplibregl-compact');
+		const forceCompactAttrib = () => mapContainer.querySelector('.maplibregl-ctrl-attrib')?.classList.add('maplibregl-compact');
+		forceCompactAttrib();
+		map.on('styledata', forceCompactAttrib);
 
 		// Fit bbox to container, choosing the tighter dimension
 		const ro = new ResizeObserver(() => {
@@ -163,6 +165,7 @@
 
 
 		map.on('load', () => {
+			forceCompactAttrib();
 			mapLoaded = true;
 
 			// Add empty sources for data layers

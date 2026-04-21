@@ -299,8 +299,14 @@
 			];
 		};
 
-		map.on('load', () => {
+		const forceCompactAttrib = () => {
 			mapContainer.querySelector('.maplibregl-ctrl-attrib')?.classList.add('maplibregl-compact');
+		};
+		forceCompactAttrib();
+		map.on('styledata', forceCompactAttrib);
+
+		map.on('load', () => {
+			forceCompactAttrib();
 
 			// Restyle country borders from CartoDB vector style
 			if (map?.getLayer('boundary_country_inner')) {
