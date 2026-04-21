@@ -276,7 +276,7 @@
 			cooperativeGestures: true,
 			attributionControl: false
 		});
-		map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+		map.addControl(new maplibregl.AttributionControl({ customAttribution: 'MapLibre' }), 'bottom-right');
 
 		const isMobile = window.innerWidth <= 768;
 		const bounds = initialBounds ?? DATA_BOUNDS;
@@ -300,6 +300,8 @@
 		};
 
 		map.on('load', () => {
+			mapContainer.querySelector('.maplibregl-ctrl-attrib')?.classList.add('maplibregl-compact');
+
 			// Restyle country borders from CartoDB vector style
 			if (map?.getLayer('boundary_country_inner')) {
 				map.setPaintProperty('boundary_country_inner', 'line-color', isDark ? '#ffffff' : '#000000');

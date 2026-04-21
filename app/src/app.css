@@ -50,13 +50,6 @@ body.is-mac .maplibregl-cooperative-gesture-screen .maplibregl-desktop-message::
 }
 
 
-/* Keep attribution collapsed (i button only) */
-.maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) .maplibregl-ctrl-attrib-inner {
-	display: none !important;
-}
-.maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-button {
-	display: block !important;
-}
 
 /* Scale control styling */
 .maplibregl-ctrl-scale {
