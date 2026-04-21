@@ -67,6 +67,7 @@
 		if (lockedBounds) params.set('bounds', lockedBounds.join(','));
 		if (selectedDate) params.set('date', selectedDate);
 		params.set('cumulative', String(cumulative));
+		params.set('annotations', String(showAnnotations));
 		const src = `${base}?${params.toString()}`;
 		return `<div data-pym-src="${src}" data-pym-id="warmaps-middle-east"></div>\n\n<script src="https://pym.nprapps.org/pym-loader.v1.js"><\/script>`;
 	});
