@@ -160,8 +160,6 @@
 		});
 		ro.observe(mapContainer);
 
-		const attribBtn = mapContainer.querySelector('.maplibregl-ctrl-attrib-button');
-		if (attribBtn) (attribBtn as HTMLElement).click();
 
 		map.on('load', () => {
 			mapLoaded = true;

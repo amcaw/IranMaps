@@ -148,9 +148,6 @@
 		});
 		ro.observe(mapContainer);
 
-			// Expand compact attribution by default
-			const attribBtn = mapContainer.querySelector('.maplibregl-ctrl-attrib-button');
-			if (attribBtn) (attribBtn as HTMLElement).click();
 
 		map.on('load', () => {
 			// Data layers
