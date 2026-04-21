@@ -205,6 +205,8 @@
 		outline: none;
 		cursor: pointer;
 		min-width: 0;
+		position: relative;
+		z-index: 1;
 	}
 
 	.slider::-webkit-slider-thumb {
