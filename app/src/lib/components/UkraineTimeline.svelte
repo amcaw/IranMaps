@@ -148,8 +148,8 @@
 
 	.frame-ticks {
 		position: absolute;
-		left: 0;
-		right: 0;
+		left: 7px;
+		right: 7px;
 		top: 7px;
 		height: 4px;
 		pointer-events: none;
@@ -166,8 +166,8 @@
 
 	.ticks {
 		position: absolute;
-		left: 0;
-		right: 0;
+		left: 7px;
+		right: 7px;
 		top: 14px;
 		height: 18px;
 		pointer-events: none;
