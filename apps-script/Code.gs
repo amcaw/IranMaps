@@ -44,7 +44,9 @@ var REGIONS = {
       "kurskincursionrussianadvances": "kursk_russian_advances",
       "kurskincursionrussianclaims": "kursk_russian_claims",
       "kurskincursionukrainianadvances": "kursk_ukrainian_advances"
-    }
+    },
+    // Deleted from repo when absent from the email, so stale data is never shown
+    optionalLayers: ["kursk_russian_advances.zip", "kursk_russian_claims.zip", "kursk_ukrainian_advances.zip"]
   }
 };
 
@@ -217,6 +219,21 @@ function collectRegionFiles(regionName, config) {
     }
   }
 
+  // For optional layers absent from this email, queue deletions so stale data is removed
+  if (config.optionalLayers) {
+    var committedPaths = {};
+    for (var f = 0; f < uniqueFiles.length; f++) {
+      committedPaths[uniqueFiles[f].path] = true;
+    }
+    for (var o = 0; o < config.optionalLayers.length; o++) {
+      var optionalPath = config.dataPath + config.optionalLayers[o];
+      if (!committedPaths[optionalPath]) {
+        uniqueFiles.push({ path: optionalPath, content: null, delete: true });
+        Logger.log("  Queued deletion: " + config.optionalLayers[o]);
+      }
+    }
+  }
+
   // Save last processed date so we don't regress to older data
   if (latestSubjectDate) {
     PropertiesService.getScriptProperties().setProperty(lastDateKey, latestSubjectDate);
@@ -243,17 +260,26 @@ function commitFilesToGitHub(files, message, token) {
 
   var treeItems = [];
   for (var i = 0; i < files.length; i++) {
-    var blobResp = githubApi("POST", baseUrl + "/git/blobs", {
-      content: files[i].content,
-      encoding: "base64"
-    }, headers);
-
-    treeItems.push({
-      path: files[i].path,
-      mode: "100644",
-      type: "blob",
-      sha: blobResp.sha
-    });
+    if (files[i].delete) {
+      // Deletion: sha null removes the file from the tree
+      treeItems.push({
+        path: files[i].path,
+        mode: "100644",
+        type: "blob",
+        sha: null
+      });
+    } else {
+      var blobResp = githubApi("POST", baseUrl + "/git/blobs", {
+        content: files[i].content,
+        encoding: "base64"
+      }, headers);
+      treeItems.push({
+        path: files[i].path,
+        mode: "100644",
+        type: "blob",
+        sha: blobResp.sha
+      });
+    }
   }
 
   var treeResp = githubApi("POST", baseUrl + "/git/trees", {
