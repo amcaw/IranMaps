@@ -562,6 +562,7 @@
 		if (!map?.getSource('strikes')) return;
 		const geojson = buildGeoJSON(date, layers);
 		(map.getSource('strikes') as maplibregl.GeoJSONSource).setData(geojson);
+		if (popup) { popup.remove(); popup = null; }
 	});
 
 	$effect(() => {
