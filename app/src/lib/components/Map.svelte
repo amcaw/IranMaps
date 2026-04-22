@@ -398,7 +398,7 @@
 				const label = layerMeta ? t(layerMeta.label) : props.layer;
 				const dateStr = new Date(props.date + 'T12:00:00Z').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 				let html = `<div class="popup-layer" style="color:${layerMeta?.color || '#fff'}">${label}</div>`;
-				const location = [props.city, props.province, props.country].filter(Boolean).join(', ');
+				const location = [props.city, props.province, t(props.country)].filter(Boolean).join(', ');
 				if (location) html += `<div class="popup-city">${location}</div>`;
 				html += `<div class="popup-date">${dateStr}</div>`;
 				if (props.type) html += `<div class="popup-type"><strong>Type :</strong> ${t(props.type)}</div>`;
