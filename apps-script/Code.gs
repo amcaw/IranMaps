@@ -261,13 +261,23 @@ function commitFilesToGitHub(files, message, token) {
   var treeItems = [];
   for (var i = 0; i < files.length; i++) {
     if (files[i].delete) {
-      // Deletion: sha null removes the file from the tree
-      treeItems.push({
-        path: files[i].path,
-        mode: "100644",
-        type: "blob",
-        sha: null
+      // Only delete if the file actually exists in the repo
+      var checkResp = UrlFetchApp.fetch(baseUrl + "/contents/" + files[i].path + "?ref=" + BRANCH, {
+        method: "get",
+        headers: headers,
+        muteHttpExceptions: true
       });
+      if (checkResp.getResponseCode() === 200) {
+        treeItems.push({
+          path: files[i].path,
+          mode: "100644",
+          type: "blob",
+          sha: null
+        });
+        Logger.log("  Deleting: " + files[i].path);
+      } else {
+        Logger.log("  Skipping deletion (not found): " + files[i].path);
+      }
     } else {
       var blobResp = githubApi("POST", baseUrl + "/git/blobs", {
         content: files[i].content,
