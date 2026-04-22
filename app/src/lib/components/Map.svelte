@@ -514,10 +514,15 @@
 		map.on('move', updateMiniMapViewport);
 	});
 
+	// Close popup when user clicks outside the iframe (window loses focus)
+	const onWindowBlur = () => { if (popup) { popup.remove(); popup = null; } };
+	window.addEventListener('blur', onWindowBlur);
+
 	onDestroy(() => {
 		map?.remove();
 		miniMap?.remove();
 		unsub();
+		window.removeEventListener('blur', onWindowBlur);
 	});
 
 	// React to theme changes
