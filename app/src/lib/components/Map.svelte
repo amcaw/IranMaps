@@ -299,14 +299,18 @@
 			];
 		};
 
-		const forceCompactAttrib = () => {
-			mapContainer.querySelector('.maplibregl-ctrl-attrib')?.classList.add('maplibregl-compact');
-		};
-		forceCompactAttrib();
-		map.on('styledata', forceCompactAttrib);
+		// Persistently enforce compact attribution — MapLibre may strip the class on resize/style changes
+		const attribEl = mapContainer.querySelector('.maplibregl-ctrl-attrib');
+		if (attribEl) {
+			attribEl.classList.add('maplibregl-compact');
+			new MutationObserver(() => {
+				if (!attribEl.classList.contains('maplibregl-compact')) {
+					attribEl.classList.add('maplibregl-compact');
+				}
+			}).observe(attribEl, { attributes: true, attributeFilter: ['class'] });
+		}
 
 		map.on('load', () => {
-			forceCompactAttrib();
 
 			// Restyle country borders from CartoDB vector style
 			if (map?.getLayer('boundary_country_inner')) {
