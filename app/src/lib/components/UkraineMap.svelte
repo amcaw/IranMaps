@@ -125,7 +125,15 @@
 		map.addControl(new maplibregl.NavigationControl(), 'top-right');
 		map.addControl(new maplibregl.ScaleControl({ maxWidth: 150, unit: 'metric' }), 'bottom-right');
 		map.addControl(new maplibregl.AttributionControl({ customAttribution: 'MapLibre | &copy; <a href="https://carto.com/">CARTO</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>' }), 'bottom-right');
-		mapContainer.querySelector('.maplibregl-ctrl-attrib')?.classList.add('maplibregl-compact');
+		const attribEl = mapContainer.querySelector('.maplibregl-ctrl-attrib');
+		if (attribEl) {
+			attribEl.classList.add('maplibregl-compact');
+			new MutationObserver(() => {
+				if (!attribEl.classList.contains('maplibregl-compact')) {
+					attribEl.classList.add('maplibregl-compact');
+				}
+			}).observe(attribEl, { attributes: true, attributeFilter: ['class'] });
+		}
 
 		// Fit bbox to container, choosing the tighter dimension
 		const ro = new ResizeObserver(() => {
