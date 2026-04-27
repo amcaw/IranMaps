@@ -11,6 +11,12 @@ export function initPym() {
 	onMount(() => {
 		if (typeof window !== 'undefined') {
 			pymChild = new pym.Child({ polling: 500 });
+
+			// Continuously track height changes via ResizeObserver
+			const root = document.querySelector('.page-root');
+			if (root) {
+				new ResizeObserver(() => pymChild?.sendHeight()).observe(root);
+			}
 		}
 	});
 }
